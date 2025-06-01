@@ -15,6 +15,27 @@ enum GameType: String, CaseIterable {
     case memoryMatch = "Memory Match"
 }
 
+enum MenuButtonModel: String, CaseIterable {
+    case game = "GAME"
+    case bonus = "BONUS"
+    case settings = "SETTIGS"
+    
+    var imageName: String {
+        switch self {
+        case .game:
+            return "game-purple"
+        case .bonus:
+            return "bonus-purple"
+        case .settings:
+            return "settings-purple"
+        }
+    }
+    
+    var image: UIImage? {
+        return UIImage(named: imageName)
+    }
+}
+
 struct ColorSpinItem {
     let color: UIColor
     let points: Int

@@ -6,3 +6,14 @@
 //
 
 import Foundation
+
+
+extension UserDefaults {
+    func hasCompletedOnboarding() -> Bool {
+        return bool(forKey: "hasCompletedOnboarding")
+    }
+    
+    func setOnboardingCompleted(_ completed: Bool) {
+        set(completed, forKey: "hasCompletedOnboarding")
+    }
+}

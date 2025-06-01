@@ -152,15 +152,19 @@ class LoadingViewController: UIViewController {
     
     private func navigateToMainMenu() {
         let mainMenuVC = MainMenuViewController()
-        let navigationController = UINavigationController(rootViewController: mainMenuVC)
-        navigationController.modalPresentationStyle = .fullScreen
+        let nav = UINavigationController(rootViewController: mainMenuVC)
+        nav.modalPresentationStyle = .fullScreen
         
-        present(navigationController, animated: true) {
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let window = windowScene.windows.first {
-                window.rootViewController = navigationController
-            }
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first {
+            UIView.transition(with: window,
+                              duration: 0.3,
+                              options: .transitionCrossDissolve,
+                              animations: {
+                window.rootViewController = nav
+            })
         }
     }
+
 }
 

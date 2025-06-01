@@ -189,6 +189,7 @@ class OnboardingViewController: UIViewController {
     
     private func navigateToMainApp() {
         let mainMenuVC = MainMenuViewController()
+        navigationController?.pushViewController(mainMenuVC, animated: false)
         let navigationController = UINavigationController(rootViewController: mainMenuVC)
         
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,

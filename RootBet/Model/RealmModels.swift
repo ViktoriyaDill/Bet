@@ -28,9 +28,13 @@ class UserSettings: Object {
     @Persisted var hapticEnabled: Bool = true
     @Persisted var difficulty: String = "normal"
     
+    @Persisted var avatarImageName: String = "default_avatar"
+    @Persisted var coins: Int = 0
+    @Persisted var crystals: Int = 0
+    
     override static func primaryKey() -> String? {
         return "userId"
     }
     
-    @Persisted private var userId: String = "main_user"
+    @Persisted var userId: String = "main_user"
 }
