@@ -36,6 +36,12 @@ enum MenuButtonModel: String, CaseIterable {
     }
 }
 
+struct GameDetailModel {
+    let title: String
+    let description: String
+    let image: UIImage
+}
+
 struct ColorSpinItem {
     let color: UIColor
     let points: Int

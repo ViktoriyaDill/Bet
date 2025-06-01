@@ -252,9 +252,8 @@ class MainMenuViewController: UIViewController {
         switch model {
         case .game:
             HapticManager.shared.impact(.medium)
-            // let gameVC = createGameViewController(for: .colorSpin)
-            // gameVC.modalPresentationStyle = .fullScreen
-            // present(gameVC, animated: true)
+            let detailVC = GameDetailViewController(startIndex: index)
+            navigationController?.pushViewController(detailVC, animated: true)
             
         case .bonus:
             HapticManager.shared.impact(.medium)
