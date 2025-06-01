@@ -177,15 +177,27 @@ class OnboardingViewController: UIViewController {
         if currentPage < onboardingData.count - 1 {
             currentPage += 1
         } else {
-            // Navigate to main app
-
+            completeOnboarding()
         }
     }
     
-    private func navigateToMainApp() {
-        // Here you would navigate to your main app screen
-        dismiss(animated: true)
+    private func completeOnboarding() {
+        UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
         
+        navigateToMainApp()
+    }
+    
+    private func navigateToMainApp() {
+        let mainMenuVC = MainMenuViewController()
+        let navigationController = UINavigationController(rootViewController: mainMenuVC)
+        
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first {
+            
+            UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve) {
+                window.rootViewController = navigationController
+            }
+        }
     }
 }
 

@@ -1,3 +1,13 @@
+//
+//  StackTowerViewModel.swift
+//  RootBet
+//
+//  Created by Пользователь on 01.06.2025.
+//
+
+import UIKit
+import RealmSwift
+
 class StackTowerViewModel: BaseGameViewModel {
     override var gameType: GameType { .stackTower }
     

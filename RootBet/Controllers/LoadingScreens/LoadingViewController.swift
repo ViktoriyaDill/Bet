@@ -91,7 +91,7 @@ class LoadingViewController: UIViewController {
             make.leading.trailing.equalToSuperview()
             make.height.equalToSuperview().multipliedBy(0.52)
         }
-    
+        
         
         loadingLabel.snp.makeConstraints { make in
             make.centerX.equalToSuperview()
@@ -126,7 +126,7 @@ class LoadingViewController: UIViewController {
                     
                     // Small delay before navigation
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        self.navigateToOnboarding()
+                        self.checkIfShouldShowOnboarding()
                     }
                 }
             }
@@ -134,10 +134,33 @@ class LoadingViewController: UIViewController {
         }
     }
     
+    private func checkIfShouldShowOnboarding() {
+        let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+        
+        if hasCompletedOnboarding {
+            navigateToMainMenu()
+        } else {
+            navigateToOnboarding()
+        }
+    }
+    
     private func navigateToOnboarding() {
         let onboardingVC = OnboardingViewController()
         onboardingVC.modalPresentationStyle = .fullScreen
         present(onboardingVC, animated: true)
+    }
+    
+    private func navigateToMainMenu() {
+        let mainMenuVC = MainMenuViewController()
+        let navigationController = UINavigationController(rootViewController: mainMenuVC)
+        navigationController.modalPresentationStyle = .fullScreen
+        
+        present(navigationController, animated: true) {
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first {
+                window.rootViewController = navigationController
+            }
+        }
     }
 }
 

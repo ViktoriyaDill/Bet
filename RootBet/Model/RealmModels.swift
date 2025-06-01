@@ -9,6 +9,7 @@ import Foundation
 import RealmSwift
 
 // MARK: - Realm Models
+
 class GameRecord: Object {
     @Persisted var gameType: String = ""
     @Persisted var score: Int = 0
