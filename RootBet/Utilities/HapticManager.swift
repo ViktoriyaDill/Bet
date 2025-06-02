@@ -11,17 +11,40 @@ import UIKit
 
 class HapticManager {
     static let shared = HapticManager()
-    private init() {}
     
-    func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle) {
-        guard UserDefaults.standard.bool(forKey: "hapticEnabled") else { return }
-        let impactFeedback = UIImpactFeedbackGenerator(style: style)
-        impactFeedback.impactOccurred()
+    private let lightImpact = UIImpactFeedbackGenerator(style: .light)
+    private let mediumImpact = UIImpactFeedbackGenerator(style: .medium)
+    private let heavyImpact = UIImpactFeedbackGenerator(style: .heavy)
+    private let notificationGenerator = UINotificationFeedbackGenerator()
+    
+    private init() {
+        lightImpact.prepare()
+        mediumImpact.prepare()
+        heavyImpact.prepare()
+        notificationGenerator.prepare()
     }
     
-    func notification(_ type: UINotificationFeedbackGenerator.FeedbackType) {
-        guard UserDefaults.standard.bool(forKey: "hapticEnabled") else { return }
-        let notificationFeedback = UINotificationFeedbackGenerator()
-        notificationFeedback.notificationOccurred(type)
+    func lightTap() {
+        lightImpact.impactOccurred()
+    }
+    
+    func mediumTap() {
+        mediumImpact.impactOccurred()
+    }
+    
+    func heavyTap() {
+        heavyImpact.impactOccurred()
+    }
+    
+    func success() {
+        notificationGenerator.notificationOccurred(.success)
+    }
+    
+    func warning() {
+        notificationGenerator.notificationOccurred(.warning)
+    }
+    
+    func error() {
+        notificationGenerator.notificationOccurred(.error)
     }
 }

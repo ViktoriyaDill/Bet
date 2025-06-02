@@ -251,18 +251,18 @@ class MainMenuViewController: UIViewController {
         
         switch model {
         case .game:
-            HapticManager.shared.impact(.medium)
+            HapticManager.shared.mediumTap()
             let detailVC = GameDetailViewController(startIndex: index)
             navigationController?.pushViewController(detailVC, animated: true)
             
         case .bonus:
-            HapticManager.shared.impact(.medium)
+            HapticManager.shared.mediumTap()
             // let bonusVC = createGameViewController(for: .stackTower)
             // bonusVC.modalPresentationStyle = .fullScreen
             // present(bonusVC, animated: true)
             
         case .settings:
-            HapticManager.shared.impact(.light)
+            HapticManager.shared.lightTap()
             let settingsVC = SettingsViewController()
             navigationController?.pushViewController(settingsVC, animated: false)
         }
@@ -270,7 +270,7 @@ class MainMenuViewController: UIViewController {
 
     
 //    @objc private func gameButtonTapped(_ sender: UIButton) {
-//        HapticManager.shared.impact(.medium)
+//        HapticManager.shared.mediumTap()
 //        
 //        let gameTypes: [GameType] = [.colorSpin, .stackTower, .bubbleCatch, .memoryMatch]
 //        let gameType = gameTypes[sender.tag % gameTypes.count]
@@ -294,7 +294,7 @@ class MainMenuViewController: UIViewController {
 //    }
     
 //    @objc private func settingsButtonTapped() {
-//        HapticManager.shared.impact(.light)
+//        HapticManager.shared.lightTap()
 //        let settingsVC = SettingsViewController()
 //        let navController = UINavigationController(rootViewController: settingsVC)
 //        present(navController, animated: true)

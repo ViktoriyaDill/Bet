@@ -216,7 +216,6 @@ final class GameDetailViewController: UIViewController {
     }
 
     @objc private func didTapPlay() {
-        // Тут запускаємо гру. Наприклад:
         let current = viewModel.currentIndex
         switch current {
         case 0:

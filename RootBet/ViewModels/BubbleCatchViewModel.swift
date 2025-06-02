@@ -60,7 +60,7 @@ class BubbleCatchViewModel: BaseGameViewModel {
             } else if checkCollision(bubble: bubbles[i]) {
                 let points = bubbles[i].points
                 updateScore(score + points)
-                HapticManager.shared.impact(.light)
+                HapticManager.shared.lightTap()
                 bubbles.remove(at: i)
             }
         }

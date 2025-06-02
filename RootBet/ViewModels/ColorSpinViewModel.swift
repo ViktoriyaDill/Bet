@@ -40,7 +40,7 @@ class ColorSpinViewModel: BaseGameViewModel {
         guard isGameActive, !isSpinning else { return }
         
         isSpinning = true
-        HapticManager.shared.impact(.medium)
+        HapticManager.shared.mediumTap()
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             self.isSpinning = false
@@ -53,9 +53,9 @@ class ColorSpinViewModel: BaseGameViewModel {
         if selectedColor == targetColor {
             let points = spinItems.first(where: { $0.color == selectedColor })?.points ?? 0
             updateScore(score + points)
-            HapticManager.shared.notification(.success)
+            HapticManager.shared.success()
         } else {
-            HapticManager.shared.notification(.error)
+            HapticManager.shared.error()
         }
         generateTargetColor()
     }

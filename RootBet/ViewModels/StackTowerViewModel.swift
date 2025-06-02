@@ -79,7 +79,7 @@ class StackTowerViewModel: BaseGameViewModel {
     func dropBlock() {
         guard let current = currentBlock else { return }
         
-        HapticManager.shared.impact(.light)
+        HapticManager.shared.lightTap()
         
         blocks.append(current)
         currentBlock = nil

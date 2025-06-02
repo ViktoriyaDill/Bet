@@ -1,5 +1,5 @@
 //
-//  SettingsSectionContainer.swift
+//  SettingsMenuButton.swift
 //  RootBet
 //
 //  Created by Пользователь on 02.06.2025.
@@ -7,19 +7,21 @@
 
 import Foundation
 import UIKit
+import SnapKit
 
-class SettingsSectionContainer: UIView {
+class SettingsMenuButton: UIButton {
     
-    let titleLabel: UILabel = {
+    private let titleLbl: UILabel = {
         let lbl = UILabel()
         lbl.font = UIFont.sigmarOne(16)
         lbl.textColor = .white
+        lbl.textAlignment = .left
         return lbl
     }()
     
     init(title: String) {
         super.init(frame: .zero)
-        titleLabel.text = title
+        titleLbl.text = title
         setupUI()
     }
     
@@ -28,14 +30,15 @@ class SettingsSectionContainer: UIView {
     }
     
     private func setupUI() {
-        backgroundColor = UIColor(white: 1.0, alpha: 0.05)
-        layer.cornerRadius = 12
+        backgroundColor = UIColor(red: 0.31, green: 0.29, blue: 0.55, alpha: 1.00)
+        layer.cornerRadius = 8
         layer.borderWidth = 1
-        layer.borderColor = UIColor.white.withAlphaComponent(0.3).cgColor
+        layer.borderColor = UIColor.white.cgColor
         
-        addSubview(titleLabel)
-        titleLabel.snp.makeConstraints { make in
-            make.top.leading.equalToSuperview().inset(16)
+        addSubview(titleLbl)
+        titleLbl.snp.makeConstraints { make in
+            make.centerY.equalToSuperview()
+            make.leading.equalToSuperview().inset(40)
         }
     }
 }

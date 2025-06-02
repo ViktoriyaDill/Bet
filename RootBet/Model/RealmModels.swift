@@ -7,6 +7,7 @@
 
 import Foundation
 import RealmSwift
+import Realm
 
 // MARK: - Realm Models
 
@@ -28,13 +29,31 @@ class UserSettings: Object {
     @Persisted var hapticEnabled: Bool = true
     @Persisted var difficulty: String = "normal"
     
-    @Persisted var avatarImageName: String = "default_avatar"
+    @Persisted var avatarImageName: String = "photoUser"
     @Persisted var coins: Int = 0
     @Persisted var crystals: Int = 0
+    
+    // New settings properties
+    @Persisted var currentTheme: String = "Dark Mode"
+    @Persisted var visualEffects: String = "Neon Glow"
+    @Persisted var videoEnabled: Bool = true
+    
+    // Theme options
+    @Persisted var availableThemes: List<String> = List<String>()
+    
+    // Visual effects options
+    @Persisted var availableVisualEffects: List<String> = List<String>()
     
     override static func primaryKey() -> String? {
         return "userId"
     }
     
     @Persisted var userId: String = "main_user"
+    
+    override init() {
+        super.init()
+        setupDefaultOptions()
+    }
+    
+    private func setupDefaultOptions() {}
 }

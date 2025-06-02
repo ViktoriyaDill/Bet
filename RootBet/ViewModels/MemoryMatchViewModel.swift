@@ -46,7 +46,7 @@ class MemoryMatchViewModel: BaseGameViewModel {
         
         cards[index].isFlipped = true
         flippedCards.append(cards[index].id)
-        HapticManager.shared.impact(.light)
+        HapticManager.shared.lightTap()
         
         if flippedCards.count == 2 {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
@@ -66,7 +66,7 @@ class MemoryMatchViewModel: BaseGameViewModel {
             cards[secondIndex].isMatched = true
             matchedPairs += 1
             updateScore(score + 20)
-            HapticManager.shared.notification(.success)
+            HapticManager.shared.success()
             
             if matchedPairs == symbols.count {
                 endGame()
@@ -74,7 +74,7 @@ class MemoryMatchViewModel: BaseGameViewModel {
         } else {
             cards[firstIndex].isFlipped = false
             cards[secondIndex].isFlipped = false
-            HapticManager.shared.notification(.error)
+            HapticManager.shared.error()
         }
         
         flippedCards.removeAll()

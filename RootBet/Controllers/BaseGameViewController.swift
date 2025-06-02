@@ -102,7 +102,7 @@ class BaseGameViewController: UIViewController {
         }
         
         @objc func backButtonTapped() {
-            HapticManager.shared.impact(.light)
+            HapticManager.shared.lightTap()
             dismiss(animated: true)
         }
         
