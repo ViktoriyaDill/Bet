@@ -13,7 +13,7 @@ class BaseGameViewController: UIViewController {
     let backgroundImageView: UIImageView = {
             let imageView = UIImageView()
             imageView.contentMode = .scaleAspectFill
-            imageView.backgroundColor = UIColor(red: 0.15, green: 0.1, blue: 0.3, alpha: 1.0)
+        imageView.image = UIImage(named: "BG2")
             return imageView
         }()
         

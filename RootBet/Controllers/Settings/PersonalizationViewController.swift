@@ -8,16 +8,8 @@
 import UIKit
 import SnapKit
 
-class PersonalizationViewController: UIViewController {
-    
-    private let backgroundImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.image = UIImage(named: "BG 1")
-        imageView.contentMode = .scaleAspectFill
-        imageView.backgroundColor = UIColor(red: 0.2, green: 0.1, blue: 0.4, alpha: 1.0)
-        return imageView
-    }()
-    
+class PersonalizationViewController: BaseViewController {
+
     private let backButton: UIButton = {
         let btn = UIButton()
         btn.setImage(UIImage(named: "prevBtn"), for: .normal)
@@ -198,7 +190,7 @@ class PersonalizationViewController: UIViewController {
     private var currentEffectIndex = 0
     
     private let themes = ["Dark Mode", "Light Mode", "Classic Mode"]
-    private let effects = ["No", "Neon Glow", "Ice Crystals"]
+    private let effects = ["No", "Neon Glow", "Ice Chill"]
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -206,14 +198,12 @@ class PersonalizationViewController: UIViewController {
         setupConstraints()
         setupActions()
         loadSettings()
+        applyCurrentTheme() 
         
         navigationController?.isNavigationBarHidden = true
     }
     
     private func setupUI() {
-        view.backgroundColor = UIColor(red: 0.2, green: 0.1, blue: 0.4, alpha: 1.0)
-        
-        view.addSubview(backgroundImageView)
         view.addSubview(backButton)
         view.addSubview(titleLabel)
         view.addSubview(scrollView)
@@ -246,10 +236,6 @@ class PersonalizationViewController: UIViewController {
     }
     
     private func setupConstraints() {
-        backgroundImageView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-        
         backButton.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
             make.leading.equalToSuperview().inset(16)
@@ -439,16 +425,23 @@ class PersonalizationViewController: UIViewController {
     @objc private func avatarButtonTapped() {
         let avatarVC = AvatarSelectionViewController()
         avatarVC.delegate = self
-        let navController = UINavigationController(rootViewController: avatarVC)
-        present(navController, animated: true)
+        navigationController?.pushViewController(avatarVC, animated: false)
     }
     
     @objc private func themeButtonTapped() {
-        // Could open full theme selection if needed
+        currentThemeIndex = (currentThemeIndex + 1) % themes.count
+        updateTheme()
     }
-    
+
     @objc private func effectsButtonTapped() {
-        // Could open full effects selection if needed
+        currentEffectIndex = (currentEffectIndex + 1) % effects.count
+        updateEffects()
+    }
+
+    private func animateValueChange(label: UILabel, newText: String) {
+        UIView.transition(with: label, duration: 0.2, options: .transitionCrossDissolve) {
+            label.text = newText
+        }
     }
     
     @objc private func themeLeftTapped() {
@@ -470,6 +463,24 @@ class PersonalizationViewController: UIViewController {
         currentEffectIndex = (currentEffectIndex + 1) % effects.count
         updateEffects()
     }
+
+    // MARK: - Arrow Animation
+
+    enum ArrowDirection {
+        case left, right
+    }
+
+    private func animateArrow(_ arrowView: UIImageView, direction: ArrowDirection) {
+        let translateX: CGFloat = direction == .left ? -3 : 3
+        
+        UIView.animate(withDuration: 0.1, animations: {
+            arrowView.transform = CGAffineTransform(translationX: translateX, y: 0)
+        }) { _ in
+            UIView.animate(withDuration: 0.1) {
+                arrowView.transform = .identity
+            }
+        }
+    }
     
     @objc private func soundSwitchChanged() {
         userService.soundEnabled = soundSwitch.isOn
@@ -481,23 +492,86 @@ class PersonalizationViewController: UIViewController {
     
     private func updateTheme() {
         let selectedTheme = themes[currentThemeIndex]
-        themeValueLabel.text = selectedTheme
+        animateValueChange(label: themeValueLabel, newText: selectedTheme)
         userService.currentTheme = selectedTheme
+        applyThemeGlobally(selectedTheme)
     }
-    
+
     private func updateEffects() {
         let selectedEffect = effects[currentEffectIndex]
-        effectsValueLabel.text = selectedEffect
-        
-        // Convert "No" to "No Effects" for storage
+        let displayText = selectedEffect == "No" ? "No" : selectedEffect
+        animateValueChange(label: effectsValueLabel, newText: displayText)
         let effectToStore = selectedEffect == "No" ? "No Effects" : selectedEffect
         userService.visualEffects = effectToStore
+        applyVisualEffectsGlobally(effectToStore)
     }
+    
+    private func applyThemeGlobally(_ theme: String) {
+        NotificationCenter.default.post(name: .themeDidChange, object: theme)
+    }
+
+    private func applyVisualEffectsGlobally(_ effect: String) {
+        NotificationCenter.default.post(name: .visualEffectsDidChange, object: effect)
+    }
+
+    private func updateCurrentViewForEffects(_ effect: String) {
+        removeAllEffectsFromView()
+        switch effect {
+        case "Neon Glow":
+            applyNeonGlowToView()
+        case "Ice Crystals":
+            applyIceCrystalsToView()
+        default:
+            break
+        }
+    }
+    
+    private func applyNeonGlowToView() {
+        let glowViews = [themeButton, visualEffectsButton, avatarButton]
+        
+        for view in glowViews {
+            view.layer.shadowColor = UIColor.cyan.cgColor
+            view.layer.shadowRadius = 5
+            view.layer.shadowOpacity = 0.3
+            view.layer.shadowOffset = CGSize.zero
+        }
+    }
+
+    private func applyIceCrystalsToView() {
+        let iceViews = [themeButton, visualEffectsButton, avatarButton]
+        
+        for view in iceViews {
+            view.layer.shadowColor = UIColor.white.cgColor
+            view.layer.shadowRadius = 3
+            view.layer.shadowOpacity = 0.2
+            view.layer.shadowOffset = CGSize.zero
+        }
+    }
+
+    private func removeAllEffectsFromView() {
+        let allViews = [themeButton, visualEffectsButton, avatarButton]
+        
+        for view in allViews {
+            view.layer.shadowOpacity = 0
+            view.layer.shadowRadius = 0
+        }
+    }
+
 }
 
 // MARK: - AvatarSelectionDelegate
+
 extension PersonalizationViewController: AvatarSelectionDelegate {
     func didSelectAvatar(_ avatarName: String) {
         userService.avatarImageName = avatarName
+        NotificationCenter.default.post(name: .avatarDidChange, object: avatarName)
     }
+}
+
+// MARK: - Notification Names Extension
+
+extension Notification.Name {
+    static let themeDidChange = Notification.Name("ThemeDidChange")
+    static let visualEffectsDidChange = Notification.Name("VisualEffectsDidChange")
+    static let avatarDidChange = Notification.Name("AvatarDidChange")
 }

@@ -9,15 +9,7 @@ import UIKit
 import SnapKit
 import StoreKit
 
-class SettingsViewController: UIViewController {
-    
-    private let backgroundImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.image = UIImage(named: "BG 1")
-        imageView.contentMode = .scaleAspectFill
-        imageView.backgroundColor = UIColor(red: 0.2, green: 0.1, blue: 0.4, alpha: 1.0)
-        return imageView
-    }()
+class SettingsViewController: BaseViewController {
     
     private let backButton: UIButton = {
         let btn = UIButton()
@@ -58,14 +50,13 @@ class SettingsViewController: UIViewController {
         setupUI()
         setupConstraints()
         setupActions()
+        applyCurrentTheme() 
         
         navigationController?.isNavigationBarHidden = true
     }
     
     private func setupUI() {
-        view.backgroundColor = UIColor(red: 0.2, green: 0.1, blue: 0.4, alpha: 1.0)
         
-        view.addSubview(backgroundImageView)
         view.addSubview(backButton)
         view.addSubview(titleLabel)
         view.addSubview(scrollView)
@@ -80,9 +71,6 @@ class SettingsViewController: UIViewController {
     }
     
     private func setupConstraints() {
-        backgroundImageView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
         
         backButton.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
@@ -194,3 +182,5 @@ class SettingsViewController: UIViewController {
         present(alert, animated: true)
     }
 }
+
+

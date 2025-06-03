@@ -7,6 +7,7 @@
 
 import Foundation
 import RealmSwift
+import UIKit
 
 
 final class UserDataService {
@@ -33,8 +34,8 @@ final class UserDataService {
             let defaultSettings = UserSettings()
             defaultSettings.userId = primaryKeyValue
             defaultSettings.avatarImageName = "photoUser"
-            defaultSettings.coins = 1000
-            defaultSettings.crystals = 50
+            defaultSettings.coins = 0
+            defaultSettings.crystals = 0
             defaultSettings.currentTheme = "Dark Mode"
             defaultSettings.visualEffects = "Neon Glow"
             defaultSettings.videoEnabled = true
@@ -88,6 +89,26 @@ final class UserDataService {
             }
         }
     }
+    
+    var avatarBackgroundColor: UIColor {
+        get {
+            guard let hex = getUserSettings()?.avatarBackgroundHex else {
+                return UIColor(red: 0.50, green: 0.33, blue: 0.75, alpha: 1.0)
+            }
+            return UIColor(hex: hex)
+        }
+        set {
+            guard let settings = getUserSettings() else { return }
+            do {
+                try realm.write {
+                    settings.avatarBackgroundHex = newValue.toHexString()
+                }
+            } catch {
+                print("Error updating avatarBackgroundColor: \(error)")
+            }
+        }
+    }
+
     
     var coins: Int {
         get {

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 import RealmSwift
 import Realm
 
@@ -30,6 +31,9 @@ class UserSettings: Object {
     @Persisted var difficulty: String = "normal"
     
     @Persisted var avatarImageName: String = "photoUser"
+    @Persisted var avatarBackgroundHex: String = "#8346BC"
+
+
     @Persisted var coins: Int = 0
     @Persisted var crystals: Int = 0
     

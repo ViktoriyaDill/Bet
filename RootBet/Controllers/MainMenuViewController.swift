@@ -9,21 +9,14 @@ import UIKit
 import SnapKit
 import RealmSwift
 
-class MainMenuViewController: UIViewController {
+class MainMenuViewController: BaseViewController {
     
     private var avatarImageView = UIImageView()
+    private var avatarBackground = UIView()
      private var coinLabel = UILabel()
      private var crystalLabel = UILabel()
     
     private let userService = UserDataService.shared
-    
-    private let backgroundImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.image = UIImage(named: "BG 1")
-        imageView.contentMode = .scaleAspectFill
-        imageView.backgroundColor = UIColor(red: 0.2, green: 0.1, blue: 0.4, alpha: 1.0)
-        return imageView
-    }()
     
     private let headerView: UIView = {
         let stack = UIView()
@@ -46,10 +39,39 @@ class MainMenuViewController: UIViewController {
         setupActions()
         createHeaderView()
         loadHeaderData()
+        applyCurrentTheme()
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(updateAvatarDisplay), name: .avatarDidChange, object: nil)
     }
     
+    override func viewDidLayoutSubviews() {
+         super.viewDidLayoutSubviews()
+         DispatchQueue.main.async { [weak self] in
+             guard let self = self else { return }
+             let radius = self.avatarBackground.bounds.height / 2
+             self.avatarBackground.layer.cornerRadius = radius
+             self.avatarImageView.layer.cornerRadius = radius
+             
+             print("Avatar bounds: \(self.avatarBackground.bounds)")
+             print("Corner radius: \(radius)")
+         }
+     }
+    
+    override func viewDidAppear(_ animated: Bool) {
+          super.viewDidAppear(animated)
+          
+          let radius = avatarBackground.bounds.height / 2
+          avatarBackground.layer.cornerRadius = radius
+          avatarImageView.layer.cornerRadius = radius
+      }
+
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self, name: .avatarDidChange, object: nil)
+    }
+
+    
     private func setupUI() {
-        view.addSubview(backgroundImageView)
         view.addSubview(headerView)
         view.addSubview(menuButtonsStackView)
         
@@ -57,12 +79,20 @@ class MainMenuViewController: UIViewController {
     }
     
     private func createHeaderView() {
-        
-        let avatar = UIImageView()
-        avatar.contentMode = .scaleAspectFit
-        avatar.clipsToBounds = true
-        headerView.addSubview(avatar)
-        
+        let avatarImage = UIImageView()
+        avatarImage.contentMode = .scaleAspectFill
+        avatarImage.clipsToBounds = true
+        avatarImage.layer.borderWidth = 2
+        avatarImage.layer.borderColor = UIColor.white.cgColor
+
+        let avatarBackground = UIView()
+        avatarBackground.clipsToBounds = true
+        avatarBackground.backgroundColor = UIColor.clear
+        headerView.addSubview(avatarBackground)
+        avatarBackground.addSubview(avatarImage)
+
+        self.avatarImageView = avatarImage
+        self.avatarBackground = avatarBackground
       
         let coinContainer = UIView()
         coinContainer.backgroundColor = UIColor(red: 0.85, green: 0.82, blue: 1.00, alpha: 1.00)
@@ -98,19 +128,22 @@ class MainMenuViewController: UIViewController {
         crystalsLabel.textColor = UIColor(red: 0.15, green: 0.03, blue: 0.43, alpha: 1.00)
         crystalContainer.addSubview(crystalsLabel)
         self.crystalLabel = crystalsLabel
-        
-        headerView.addSubview(avatar)
         headerView.addSubview(coinContainer)
         headerView.addSubview(crystalContainer)
 
         // 1) Avatar
-        avatar.snp.makeConstraints { make in
+        
+        avatarBackground.snp.makeConstraints { make in
             make.leading.equalToSuperview()
             make.centerY.equalToSuperview()
             make.height.equalToSuperview()
-            make.width.equalTo(avatar.snp.height)
+            make.width.equalTo(64)
         }
-        self.avatarImageView = avatar
+
+        avatarImage.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+
 
         // 2) Coin Container
         coinIcon.snp.makeConstraints { make in
@@ -126,7 +159,7 @@ class MainMenuViewController: UIViewController {
         }
         coinContainer.snp.makeConstraints { make in
             make.centerY.equalToSuperview()
-            make.leading.equalTo(avatar.snp.trailing).offset(44)
+            make.leading.equalTo(avatarBackground.snp.trailing).offset(44)
             make.height.equalTo(coinContainer.snp.width).multipliedBy(0.48)
             make.width.equalToSuperview().multipliedBy(0.28)
         }
@@ -196,10 +229,6 @@ class MainMenuViewController: UIViewController {
     }
     
     private func setupConstraints() {
-        backgroundImageView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-        
         headerView.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
             make.centerX.equalToSuperview()
@@ -269,34 +298,37 @@ class MainMenuViewController: UIViewController {
     }
 
     
-//    @objc private func gameButtonTapped(_ sender: UIButton) {
-//        HapticManager.shared.mediumTap()
-//        
-//        let gameTypes: [GameType] = [.colorSpin, .stackTower, .bubbleCatch, .memoryMatch]
-//        let gameType = gameTypes[sender.tag % gameTypes.count]
-//        
-//        let gameVC = createGameViewController(for: gameType)
-//        gameVC.modalPresentationStyle = .fullScreen
-//        present(gameVC, animated: true)
-//    }
+    override func applyThemeToElements(theme: String, effects: String) {
+           super.applyThemeToElements(theme: theme, effects: effects)
+           
+           let buttonContainers = menuButtonsStackView.arrangedSubviews
+           for container in buttonContainers {
+               themeManager.applyVisualEffects(to: container, effect: effects)
+           }
+           updateCurrencyContainersTheme(theme: theme)
+       }
+       
+       private func updateCurrencyContainersTheme(theme: String) {
+           let coinContainerColor: UIColor
+           let textColor: UIColor
+           
+           switch theme {
+           case "Light Mode":
+               coinContainerColor = UIColor(red: 0.75, green: 0.72, blue: 0.90, alpha: 1.00)
+               textColor = UIColor(red: 0.15, green: 0.03, blue: 0.43, alpha: 1.00)
+           case "Classic Mode":
+               coinContainerColor = UIColor(red: 0.40, green: 0.45, blue: 0.55, alpha: 1.00)
+               textColor = UIColor.white
+           default: // Dark Mode
+               coinContainerColor = UIColor(red: 0.85, green: 0.82, blue: 1.00, alpha: 1.00)
+               textColor = UIColor(red: 0.15, green: 0.03, blue: 0.43, alpha: 1.00)
+           }
+       }
     
-//    private func createGameViewController(for gameType: GameType) -> UIViewController {
-//        switch gameType {
-//        case .colorSpin:
-//            return ColorSpinGameViewController()
-//        case .stackTower:
-//            return StackTowerGameViewController()
-//        case .bubbleCatch:
-//            return BubbleCatchGameViewController()
-//        case .memoryMatch:
-//            return MemoryMatchGameViewController()
-//        }
-//    }
-    
-//    @objc private func settingsButtonTapped() {
-//        HapticManager.shared.lightTap()
-//        let settingsVC = SettingsViewController()
-//        let navController = UINavigationController(rootViewController: settingsVC)
-//        present(navController, animated: true)
-//    }
-}
+    override func updateAvatarDisplay() {
+            DispatchQueue.main.async { [self] in
+                self.avatarImageView.image = UIImage(named: userService.avatarImageName) ?? UIImage(named: "photoUser")
+                self.avatarImageView.backgroundColor = userService.avatarBackgroundColor
+            }
+        }
+    }

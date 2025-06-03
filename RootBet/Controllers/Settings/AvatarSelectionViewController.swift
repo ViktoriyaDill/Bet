@@ -12,167 +12,300 @@ protocol AvatarSelectionDelegate: AnyObject {
     func didSelectAvatar(_ avatarName: String)
 }
 
-class AvatarSelectionViewController: UIViewController {
+class AvatarSelectionViewController: BaseViewController {
     
     weak var delegate: AvatarSelectionDelegate?
+    private let userService = UserDataService.shared
     
-    private let backgroundImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.image = UIImage(named: "BG 1")
-        imageView.contentMode = .scaleAspectFill
-        imageView.backgroundColor = UIColor(red: 0.2, green: 0.1, blue: 0.4, alpha: 1.0)
-        return imageView
-    }()
+    private var selectedAvatarIndex: Int = 0
+    private var selectedBgColorIndex: Int = 0
     
-    private let titleLabel: UILabel = {
-        let lbl = UILabel()
-        lbl.text = "AVATAR"
-        lbl.font = UIFont.sigmarOne(24)
-        lbl.textColor = .white
-        lbl.textAlignment = .center
-        return lbl
-    }()
+    private let bgColorStack = UIStackView()
     
-    private let collectionView: UICollectionView = {
-        let layout = UICollectionViewFlowLayout()
-        layout.minimumInteritemSpacing = 16
-        layout.minimumLineSpacing = 16
-        layout.sectionInset = UIEdgeInsets(top: 20, left: 20, bottom: 20, right: 20)
-        
-        let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        cv.backgroundColor = .clear
-        cv.showsVerticalScrollIndicator = false
-        return cv
-    }()
-    
-    private let saveButton: UIButton = {
-        let btn = UIButton()
-        btn.setTitle("Save", for: .normal)
-        btn.setTitleColor(.white, for: .normal)
-        btn.titleLabel?.font = UIFont.sigmarOne(18)
-        btn.backgroundColor = UIColor(red: 0.65, green: 0.48, blue: 0.79, alpha: 1.00)
-        btn.layer.cornerRadius = 12
-        return btn
-    }()
-    
-    private let cancelButton: UIButton = {
-        let btn = UIButton()
-        btn.setTitle("Cancel", for: .normal)
-        btn.setTitleColor(.white, for: .normal)
-        btn.titleLabel?.font = UIFont.systemFont(ofSize: 16)
-        return btn
-    }()
-    
-
     private let avatars = [
         "photoUser",
-        "beautiful-woman-in-purple-dress 1",
         "Cat", "Fox", "Frog", "Girl",
         "Man2", "Panda", "Robot", "Woman",
         "Woman2", "Woman3", "Yellow"
     ]
     
-    private var selectedAvatarIndex: Int = 0
-    private let userService = UserDataService.shared
+    private let bgColors: [UIColor] = [
+        UIColor(hex: "#8346BC"), // violet
+        UIColor(hex: "#DDB43F"), // yellow
+        UIColor(hex: "#FF00ED"), // pink
+        UIColor(hex: "#34C759"), // green
+        UIColor(hex: "#FF3B30")  // red
+       ]
+    
+    private let backButton: UIButton = {
+        let button = UIButton()
+        button.setImage(UIImage(named: "prevBtn"), for: .normal)
+        return button
+    }()
+    
+    private let titleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "SETTINGS"
+        label.font = UIFont.sigmarOne(28)
+        label.textColor = .white
+        label.textAlignment = .center
+        return label
+    }()
+    
+    private let bgColorsLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Background"
+        label.font = UIFont.sigmarOne(12)
+        label.textColor = .white
+        label.textAlignment = .center
+        return label
+    }()
+    
+    private let bgColorsView: UIView = {
+        let st = UIView()
+        st.backgroundColor = UIColor(red: 0.31, green: 0.29, blue: 0.55, alpha: 1.00)
+        st.layer.cornerRadius = 8
+        st.layer.borderColor = UIColor.white.cgColor
+        st.layer.borderWidth = 1
+        return st
+    }()
+    
+    
+    private let avatarTitleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Avatar"
+        label.font = UIFont.sigmarOne(20)
+        label.textColor = .white
+        label.textAlignment = .center
+        return label
+    }()
+    
+    private let avatarsView: UIView = {
+        let st = UIView()
+        st.backgroundColor = UIColor(red: 0.31, green: 0.29, blue: 0.55, alpha: 1.00)
+        st.layer.cornerRadius = 8
+        st.layer.borderColor = UIColor.white.cgColor
+        st.layer.borderWidth = 1
+        return st
+    }()
+    
+    private let selectedAvatarImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.layer.cornerRadius = 44
+        imageView.layer.borderWidth = 2
+        imageView.layer.borderColor = UIColor.white.cgColor
+        imageView.clipsToBounds = true
+        imageView.contentMode = .scaleAspectFill
+        return imageView
+    }()
+    
+    private let avatarNameLabel: UITextField = {
+        let textField = UITextField()
+        textField.backgroundColor = UIColor(red: 0.37, green: 0.25, blue: 0.53, alpha: 1.00)
+        textField.textAlignment = .center
+        textField.font = UIFont.systemFont(ofSize: 16)
+        textField.textColor = .white
+        textField.layer.cornerRadius = 1
+        textField.layer.borderWidth = 1
+        textField.layer.borderColor = UIColor.white.cgColor
+        textField.backgroundColor = .clear
+        return textField
+    }()
+    
+    private let collectionView: UICollectionView = {
+        let layout = UICollectionViewFlowLayout()
+        layout.minimumLineSpacing = 16
+        layout.minimumInteritemSpacing = 16
+        layout.sectionInset = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
+        let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        cv.backgroundColor = .clear
+        return cv
+    }()
+    
+    private let saveButton: UIButton = {
+        let button = UIButton()
+        button.setTitle("Save", for: .normal)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 20)
+        button.backgroundColor = UIColor(red: 0.65, green: 0.48, blue: 0.79, alpha: 1.00)
+        button.setTitleColor(.white, for: .normal)
+        button.layer.cornerRadius = 16
+        return button
+    }()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setupConstraints()
-        setupActions()
         setupCollectionView()
         loadCurrentAvatar()
     }
     
     private func setupUI() {
-        view.backgroundColor = UIColor(red: 0.2, green: 0.1, blue: 0.4, alpha: 1.0)
-        
-        view.addSubview(backgroundImageView)
-        view.addSubview(cancelButton)
+        view.addSubview(backButton)
         view.addSubview(titleLabel)
-        view.addSubview(collectionView)
+        view.addSubview(avatarTitleLabel)
+        view.addSubview(avatarsView)
+        avatarsView.addSubview(selectedAvatarImageView)
+        avatarsView.addSubview(avatarNameLabel)
+        avatarsView.addSubview(collectionView)
+        view.addSubview(bgColorsView)
+        bgColorsView.addSubview(bgColorsLabel)
+        bgColorsView.addSubview(bgColorStack)
         view.addSubview(saveButton)
+        
+        backButton.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
+        saveButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
+        
+        bgColorStack.axis = .horizontal
+        bgColorStack.distribution = .fillEqually
+        bgColorStack.spacing = 12
+        
+        for (i, color) in bgColors.enumerated() {
+            let view = UIView()
+            view.backgroundColor = color
+            view.layer.cornerRadius = 26
+            view.layer.borderColor = UIColor.white.cgColor
+            view.layer.borderWidth = (i == selectedBgColorIndex) ? 3 : 0
+            view.tag = i
+            view.isUserInteractionEnabled = true
+            let tap = UITapGestureRecognizer(target: self, action: #selector(colorTapped(_:)))
+            view.addGestureRecognizer(tap)
+            bgColorStack.addArrangedSubview(view)
+        }
     }
     
     private func setupConstraints() {
-        backgroundImageView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
         
-        cancelButton.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(16)
-            make.leading.equalToSuperview().inset(16)
+        backButton.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(10)
+            make.leading.equalToSuperview().offset(16)
+            make.width.height.equalTo(48)
         }
         
         titleLabel.snp.makeConstraints { make in
-            make.centerY.equalTo(cancelButton)
+            make.top.equalTo(backButton.snp.top)
             make.centerX.equalToSuperview()
         }
         
-        collectionView.snp.makeConstraints { make in
+        avatarTitleLabel.snp.makeConstraints { make in
             make.top.equalTo(titleLabel.snp.bottom).offset(32)
+            make.centerX.equalToSuperview()
+        }
+        
+        avatarsView.snp.makeConstraints { make in
+            make.top.equalTo(avatarTitleLabel.snp.bottom).offset(16)
+            make.centerX.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(30)
+            make.height.equalToSuperview().multipliedBy(0.45)
+        }
+        
+        selectedAvatarImageView.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(16)
+            make.centerX.equalToSuperview()
+            make.width.height.equalTo(88)
+        }
+        
+        avatarNameLabel.snp.makeConstraints { make in
+            make.top.equalTo(selectedAvatarImageView.snp.bottom).offset(8)
+            make.centerX.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(33)
+            make.height.equalTo(26)
+        }
+        
+        collectionView.snp.makeConstraints { make in
+            make.top.equalTo(avatarNameLabel.snp.bottom).offset(24)
             make.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(saveButton.snp.top).offset(-20)
+            make.height.equalToSuperview().multipliedBy(0.56)
+        }
+        
+        bgColorsView.snp.makeConstraints { make in
+            make.top.equalTo(avatarsView.snp.bottom).offset(8)
+            make.leading.trailing.equalToSuperview().inset(30)
+            make.centerX.equalToSuperview()
+            make.height.equalToSuperview().multipliedBy(0.12)
+        }
+        
+        bgColorsLabel.snp.makeConstraints { make in
+            make.top.leading.equalToSuperview().inset(12)
+        }
+        
+        bgColorStack.snp.makeConstraints { make in
+            make.bottom.leading.trailing.equalToSuperview().inset(12)
+            make.height.equalTo(52)
         }
         
         saveButton.snp.makeConstraints { make in
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-32)
-            make.leading.trailing.equalToSuperview().inset(32)
-            make.height.equalTo(56)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).inset(24)
+            make.centerX.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.height.equalTo(64)
         }
     }
     
-    private func setupActions() {
-        cancelButton.addTarget(self, action: #selector(cancelButtonTapped), for: .touchUpInside)
-        saveButton.addTarget(self, action: #selector(saveButtonTapped), for: .touchUpInside)
-    }
-    
     private func setupCollectionView() {
-        collectionView.delegate = self
         collectionView.dataSource = self
+        collectionView.delegate = self
         collectionView.register(AvatarCell.self, forCellWithReuseIdentifier: "AvatarCell")
     }
     
     private func loadCurrentAvatar() {
-        let currentAvatar = userService.avatarImageName
-        if let index = avatars.firstIndex(of: currentAvatar) {
-            selectedAvatarIndex = index
+        let current = userService.avatarImageName
+        if let idx = avatars.firstIndex(of: current) {
+            selectedAvatarIndex = idx
+        }
+        selectedAvatarImageView.image = UIImage(named: avatars[selectedAvatarIndex])
+        avatarNameLabel.text = avatars[selectedAvatarIndex]
+        selectedAvatarImageView.backgroundColor = userService.avatarBackgroundColor
+    }
+    
+    @objc private func colorTapped(_ gesture: UITapGestureRecognizer) {
+        guard let view = gesture.view else { return }
+        selectedBgColorIndex = view.tag
+        selectedAvatarImageView.backgroundColor = bgColors[selectedBgColorIndex]
+        for (i, v) in bgColorStack.arrangedSubviews.enumerated() {
+            v.layer.borderWidth = (i == selectedBgColorIndex) ? 3 : 0
         }
     }
     
-    @objc private func cancelButtonTapped() {
-        dismiss(animated: true)
+    @objc private func backTapped() {
+        navigationController?.popViewController(animated: false)
     }
     
-    @objc private func saveButtonTapped() {
+    @objc private func saveTapped() {
         let selectedAvatar = avatars[selectedAvatarIndex]
-        delegate?.didSelectAvatar(selectedAvatar)
-        dismiss(animated: true)
+                userService.avatarImageName = selectedAvatar
+                userService.avatarBackgroundColor = bgColors[selectedBgColorIndex]
+                delegate?.didSelectAvatar(selectedAvatar)
+                NotificationCenter.default.post(name: .avatarDidChange, object: selectedAvatar)
+                backTapped()
     }
 }
 
-// MARK: - UICollectionView DataSource & Delegate
-extension AvatarSelectionViewController: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
-    
+extension AvatarSelectionViewController: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return avatars.count
+        avatars.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "AvatarCell", for: indexPath) as! AvatarCell
-        let avatarName = avatars[indexPath.item]
+        let name = avatars[indexPath.item]
         let isSelected = indexPath.item == selectedAvatarIndex
-        cell.configure(with: avatarName, isSelected: isSelected)
+        cell.configure(with: name, isSelected: isSelected)
         return cell
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         selectedAvatarIndex = indexPath.item
+        selectedAvatarImageView.image = UIImage(named: avatars[selectedAvatarIndex])
+        avatarNameLabel.text = avatars[selectedAvatarIndex]
         collectionView.reloadData()
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let width = (collectionView.frame.width - 60) / 3 // 3 columns with spacing
+        let spacing: CGFloat = 20
+        let itemsPerRow: CGFloat = 4
+        let totalSpacing = spacing * (itemsPerRow + 1)
+        let width = (collectionView.frame.width - totalSpacing) / itemsPerRow
         return CGSize(width: width, height: width)
     }
 }
