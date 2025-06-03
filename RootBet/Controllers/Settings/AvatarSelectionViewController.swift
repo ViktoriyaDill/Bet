@@ -63,14 +63,13 @@ class AvatarSelectionViewController: UIViewController {
         return btn
     }()
     
-    // Available avatars - you can add more based on your assets
+
     private let avatars = [
         "photoUser",
         "beautiful-woman-in-purple-dress 1",
-        // Add more avatar names from your assets
-        "avatar1", "avatar2", "avatar3", "avatar4",
-        "avatar5", "avatar6", "avatar7", "avatar8",
-        "avatar9", "avatar10", "avatar11", "avatar12"
+        "Cat", "Fox", "Frog", "Girl",
+        "Man2", "Panda", "Robot", "Woman",
+        "Woman2", "Woman3", "Yellow"
     ]
     
     private var selectedAvatarIndex: Int = 0

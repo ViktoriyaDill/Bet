@@ -38,7 +38,7 @@ class PersonalizationViewController: UIViewController {
     private let personalizationLabel: UILabel = {
         let lbl = UILabel()
         lbl.text = "PERSONALIZATION"
-        lbl.font = UIFont.sigmarOne(20)
+        lbl.font = UIFont.sigmarOne(24)
         lbl.textColor = .white
         lbl.textAlignment = .left
         return lbl
@@ -55,8 +55,8 @@ class PersonalizationViewController: UIViewController {
     // Personalization options
     private let avatarButton: UIButton = {
         let btn = UIButton()
-        btn.backgroundColor = UIColor(white: 1.0, alpha: 0.1)
-        btn.layer.cornerRadius = 12
+        btn.backgroundColor = UIColor(red: 0.31, green: 0.29, blue: 0.55, alpha: 1.00)
+        btn.layer.cornerRadius = 8
         btn.layer.borderWidth = 1
         btn.layer.borderColor = UIColor.white.cgColor
         return btn
@@ -65,15 +65,15 @@ class PersonalizationViewController: UIViewController {
     private let avatarLabel: UILabel = {
         let lbl = UILabel()
         lbl.text = "AVATAR"
-        lbl.font = UIFont.sigmarOne(18)
+        lbl.font = UIFont.sigmarOne(16)
         lbl.textColor = .white
         return lbl
     }()
     
     private let themeButton: UIButton = {
         let btn = UIButton()
-        btn.backgroundColor = UIColor(white: 1.0, alpha: 0.1)
-        btn.layer.cornerRadius = 12
+        btn.backgroundColor = UIColor(red: 0.31, green: 0.29, blue: 0.55, alpha: 1.00)
+        btn.layer.cornerRadius = 8
         btn.layer.borderWidth = 1
         btn.layer.borderColor = UIColor.white.cgColor
         return btn
@@ -82,7 +82,7 @@ class PersonalizationViewController: UIViewController {
     private let themeLabel: UILabel = {
         let lbl = UILabel()
         lbl.text = "THEME"
-        lbl.font = UIFont.sigmarOne(18)
+        lbl.font = UIFont.sigmarOne(16)
         lbl.textColor = .white
         return lbl
     }()
@@ -103,7 +103,7 @@ class PersonalizationViewController: UIViewController {
     private let themeValueLabel: UILabel = {
         let lbl = UILabel()
         lbl.text = "Dark Mode"
-        lbl.font = UIFont.systemFont(ofSize: 16)
+        lbl.font = UIFont.systemFont(ofSize: 12)
         lbl.textColor = .white
         lbl.textAlignment = .center
         return lbl
@@ -119,8 +119,8 @@ class PersonalizationViewController: UIViewController {
     
     private let visualEffectsButton: UIButton = {
         let btn = UIButton()
-        btn.backgroundColor = UIColor(white: 1.0, alpha: 0.1)
-        btn.layer.cornerRadius = 12
+        btn.backgroundColor = UIColor(red: 0.31, green: 0.29, blue: 0.55, alpha: 1.00)
+        btn.layer.cornerRadius = 8
         btn.layer.borderWidth = 1
         btn.layer.borderColor = UIColor.white.cgColor
         return btn
@@ -129,7 +129,7 @@ class PersonalizationViewController: UIViewController {
     private let visualEffectsLabel: UILabel = {
         let lbl = UILabel()
         lbl.text = "VISUAL EFFECTS"
-        lbl.font = UIFont.sigmarOne(18)
+        lbl.font = UIFont.sigmarOne(16)
         lbl.textColor = .white
         return lbl
     }()
@@ -150,7 +150,7 @@ class PersonalizationViewController: UIViewController {
     private let effectsValueLabel: UILabel = {
         let lbl = UILabel()
         lbl.text = "No"
-        lbl.font = UIFont.systemFont(ofSize: 16)
+        lbl.font = UIFont.systemFont(ofSize: 12)
         lbl.textColor = .white
         lbl.textAlignment = .center
         return lbl
@@ -168,28 +168,28 @@ class PersonalizationViewController: UIViewController {
     private let soundLabel: UILabel = {
         let lbl = UILabel()
         lbl.text = "SOUND"
-        lbl.font = UIFont.sigmarOne(18)
+        lbl.font = UIFont.sigmarOne(16)
         lbl.textColor = .white
         return lbl
     }()
     
     private let soundSwitch: UISwitch = {
         let sw = UISwitch()
-        sw.onTintColor = UIColor.systemPurple
+        sw.onTintColor = UIColor(red: 0.48, green: 0.03, blue: 0.83, alpha: 1.00)
         return sw
     }()
     
     private let vibroLabel: UILabel = {
         let lbl = UILabel()
         lbl.text = "VIBRO"
-        lbl.font = UIFont.sigmarOne(18)
+        lbl.font = UIFont.sigmarOne(16)
         lbl.textColor = .white
         return lbl
     }()
     
     private let vibroSwitch: UISwitch = {
         let sw = UISwitch()
-        sw.onTintColor = UIColor.systemPurple
+        sw.onTintColor = UIColor(red: 0.48, green: 0.03, blue: 0.83, alpha: 1.00)
         return sw
     }()
     
@@ -198,7 +198,7 @@ class PersonalizationViewController: UIViewController {
     private var currentEffectIndex = 0
     
     private let themes = ["Dark Mode", "Light Mode", "Classic Mode"]
-    private let effects = ["No", "Neon Glow", "Ice Crystals", "Aurora Effect"]
+    private let effects = ["No", "Neon Glow", "Ice Crystals"]
     
     override func viewDidLoad() {
         super.viewDidLoad()

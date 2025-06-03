@@ -28,10 +28,10 @@ class SettingsSectionContainer: UIView {
     }
     
     private func setupUI() {
-        backgroundColor = UIColor(white: 1.0, alpha: 0.05)
+        backgroundColor = UIColor(red: 0.31, green: 0.29, blue: 0.55, alpha: 1.00)
         layer.cornerRadius = 12
         layer.borderWidth = 1
-        layer.borderColor = UIColor.white.withAlphaComponent(0.3).cgColor
+        layer.borderColor = UIColor.white.cgColor
         
         addSubview(titleLabel)
         titleLabel.snp.makeConstraints { make in
