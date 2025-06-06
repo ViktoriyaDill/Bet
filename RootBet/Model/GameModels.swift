@@ -42,9 +42,15 @@ struct GameDetailModel {
     let image: UIImage
 }
 
+
+enum ResultType {
+    case win
+    case lost
+}
+
 struct ColorSpinItem {
     let color: UIColor
-    let points: Int
+    let coins: Int
 }
 
 struct StackTowerBlock {

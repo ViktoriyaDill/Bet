@@ -43,9 +43,9 @@ class BubbleCatchGameViewController: BaseGameViewController {
     
     private func setupBubbleCatchConstraints() {
         gameAreaView.snp.makeConstraints { make in
-            make.top.equalTo(timeLabel.snp.bottom).offset(20)
+            make.top.equalTo(backButton.snp.bottom).offset(20)
             make.leading.trailing.equalToSuperview().inset(20)
-            make.bottom.equalTo(startButton.snp.top).offset(-20)
+            make.bottom.equalTo(playButton.snp.top).offset(-20)
         }
         
         basketView.snp.makeConstraints { make in
@@ -114,17 +114,21 @@ class BubbleCatchGameViewController: BaseGameViewController {
         }
     }
     
-    override func startButtonTapped() {
-        super.startButtonTapped()
+    override func playButtonTapped() {
+        super.playButtonTapped()
         viewModel.startGame()
-        startButton.setTitle("Game Active", for: .normal)
-        startButton.backgroundColor = .systemGray
-        startButton.isEnabled = false
+        playButton.setTitle("Game Active", for: .normal)
+        playButton.backgroundColor = .systemGray
+        playButton.isEnabled = false
         startGameLoop()
     }
 }
 
 extension BubbleCatchGameViewController: GameViewModelDelegate {
+    func infoButtoTapped() {
+        print("infoButtoTapped")
+    }
+    
     func gameDidStart() {
         bubbleViews.forEach { $0.removeFromSuperview() }
         bubbleViews.removeAll()
@@ -135,9 +139,9 @@ extension BubbleCatchGameViewController: GameViewModelDelegate {
     }
     
     func gameDidEnd(score: Int) {
-        startButton.setTitle("Start Game", for: .normal)
-        startButton.backgroundColor = .systemGreen
-        startButton.isEnabled = true
+        playButton.setTitle("Start Game", for: .normal)
+        playButton.backgroundColor = .systemGreen
+        playButton.isEnabled = true
         stopGameLoop()
         
         let alert = UIAlertController(title: "Game Over", message: "Bubbles Caught: \(score / 10)\nFinal Score: \(score)", preferredStyle: .alert)

@@ -13,6 +13,7 @@ protocol GameViewModelDelegate: AnyObject {
     func gameDidStart()
     func gameDidEnd(score: Int)
     func scoreDidUpdate(_ score: Int)
+    func infoButtoTapped()
 }
 
 class BaseGameViewModel: ObservableObject {

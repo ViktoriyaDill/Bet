@@ -53,7 +53,7 @@ class StackTowerGameViewController: BaseGameViewController {
         }
         
         dropButton.snp.makeConstraints { make in
-            make.bottom.equalTo(startButton.snp.top).offset(-20)
+            make.bottom.equalTo(playButton.snp.top).offset(-20)
             make.centerX.equalToSuperview()
             make.width.equalTo(120)
             make.height.equalTo(50)
@@ -72,17 +72,19 @@ class StackTowerGameViewController: BaseGameViewController {
         viewModel.dropBlock()
     }
     
-    override func startButtonTapped() {
-        super.startButtonTapped()
+    override func playButtonTapped() {
+        super.playButtonTapped()
         viewModel.startGame()
-        startButton.setTitle("Game Active", for: .normal)
-        startButton.backgroundColor = .systemGray
-        startButton.isEnabled = false
+        playButton.setTitle("Game Active", for: .normal)
+        playButton.backgroundColor = .systemGray
+        playButton.isEnabled = false
         dropButton.isEnabled = true
     }
 }
 
 extension StackTowerGameViewController: GameViewModelDelegate {
+    func infoButtoTapped() {}
+    
     func gameDidStart() {
         blockViews.forEach { $0.removeFromSuperview() }
         blockViews.removeAll()
@@ -91,9 +93,9 @@ extension StackTowerGameViewController: GameViewModelDelegate {
     }
     
     func gameDidEnd(score: Int) {
-        startButton.setTitle("Start Game", for: .normal)
-        startButton.backgroundColor = .systemGreen
-        startButton.isEnabled = true
+        playButton.setTitle("Start Game", for: .normal)
+        playButton.backgroundColor = .systemGreen
+        playButton.isEnabled = true
         dropButton.isEnabled = false
         
         let alert = UIAlertController(title: "Game Over", message: "Blocks Stacked: \(viewModel.blocks.count)\nFinal Score: \(score)", preferredStyle: .alert)

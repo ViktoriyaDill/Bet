@@ -12,7 +12,6 @@ import RealmSwift
 class MainMenuViewController: BaseViewController {
     
     private var avatarImageView = UIImageView()
-    private var avatarBackground = UIView()
      private var coinLabel = UILabel()
      private var crystalLabel = UILabel()
     
@@ -43,27 +42,6 @@ class MainMenuViewController: BaseViewController {
         
         NotificationCenter.default.addObserver(self, selector: #selector(updateAvatarDisplay), name: .avatarDidChange, object: nil)
     }
-    
-    override func viewDidLayoutSubviews() {
-         super.viewDidLayoutSubviews()
-         DispatchQueue.main.async { [weak self] in
-             guard let self = self else { return }
-             let radius = self.avatarBackground.bounds.height / 2
-             self.avatarBackground.layer.cornerRadius = radius
-             self.avatarImageView.layer.cornerRadius = radius
-             
-             print("Avatar bounds: \(self.avatarBackground.bounds)")
-             print("Corner radius: \(radius)")
-         }
-     }
-    
-    override func viewDidAppear(_ animated: Bool) {
-          super.viewDidAppear(animated)
-          
-          let radius = avatarBackground.bounds.height / 2
-          avatarBackground.layer.cornerRadius = radius
-          avatarImageView.layer.cornerRadius = radius
-      }
 
     
     deinit {
@@ -81,19 +59,13 @@ class MainMenuViewController: BaseViewController {
     private func createHeaderView() {
         let avatarImage = UIImageView()
         avatarImage.contentMode = .scaleAspectFill
+        avatarImage.backgroundColor = userService.avatarBackgroundColor
         avatarImage.clipsToBounds = true
         avatarImage.layer.borderWidth = 2
         avatarImage.layer.borderColor = UIColor.white.cgColor
-
-        let avatarBackground = UIView()
-        avatarBackground.clipsToBounds = true
-        avatarBackground.backgroundColor = UIColor.clear
-        headerView.addSubview(avatarBackground)
-        avatarBackground.addSubview(avatarImage)
-
+        headerView.addSubview(avatarImage)
         self.avatarImageView = avatarImage
-        self.avatarBackground = avatarBackground
-      
+        
         let coinContainer = UIView()
         coinContainer.backgroundColor = UIColor(red: 0.85, green: 0.82, blue: 1.00, alpha: 1.00)
         coinContainer.layer.cornerRadius = 6
@@ -106,7 +78,7 @@ class MainMenuViewController: BaseViewController {
         coinContainer.addSubview(coinIcon)
         
         let coinsLabel = UILabel()
-        coinsLabel.font = UIFont.sigmarOne(20)
+        coinsLabel.font = UIFont.sigmarOne(16)
         coinsLabel.textColor = UIColor(red: 0.15, green: 0.03, blue: 0.43, alpha: 1.00)
         coinContainer.addSubview(coinsLabel)
         self.coinLabel = coinsLabel
@@ -124,44 +96,19 @@ class MainMenuViewController: BaseViewController {
         crystalContainer.addSubview(crystalIcon)
         
         let crystalsLabel = UILabel()
-        crystalsLabel.font = UIFont.sigmarOne(20)
+        crystalsLabel.font = UIFont.sigmarOne(16)
         crystalsLabel.textColor = UIColor(red: 0.15, green: 0.03, blue: 0.43, alpha: 1.00)
         crystalContainer.addSubview(crystalsLabel)
         self.crystalLabel = crystalsLabel
         headerView.addSubview(coinContainer)
         headerView.addSubview(crystalContainer)
-
+        
         // 1) Avatar
         
-        avatarBackground.snp.makeConstraints { make in
-            make.leading.equalToSuperview()
-            make.centerY.equalToSuperview()
-            make.height.equalToSuperview()
-            make.width.equalTo(64)
-        }
-
         avatarImage.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-
-
-        // 2) Coin Container
-        coinIcon.snp.makeConstraints { make in
-            make.leading.equalToSuperview().inset(6)
+            make.leading.top.bottom.equalToSuperview()
             make.centerY.equalToSuperview()
-            make.width.equalToSuperview().multipliedBy(0.35)
-            make.height.equalTo(coinIcon.snp.width)
-        }
-        coinsLabel.snp.makeConstraints { make in
-            make.leading.equalTo(coinIcon.snp.trailing).offset(4)
-            make.centerY.equalToSuperview()
-            make.trailing.equalToSuperview().inset(6)
-        }
-        coinContainer.snp.makeConstraints { make in
-            make.centerY.equalToSuperview()
-            make.leading.equalTo(avatarBackground.snp.trailing).offset(44)
-            make.height.equalTo(coinContainer.snp.width).multipliedBy(0.48)
-            make.width.equalToSuperview().multipliedBy(0.28)
+            make.width.equalTo(avatarImage.snp.height)
         }
 
         // 3) Crystal Container
@@ -178,10 +125,28 @@ class MainMenuViewController: BaseViewController {
         }
         crystalContainer.snp.makeConstraints { make in
             make.centerY.equalToSuperview()
-            make.leading.equalTo(coinContainer.snp.trailing).offset(6)
             make.height.equalTo(coinContainer.snp.width).multipliedBy(0.48)
             make.width.equalToSuperview().multipliedBy(0.28)
             make.trailing.equalToSuperview()
+        }
+        
+        // 2) Coin Container
+        coinIcon.snp.makeConstraints { make in
+            make.leading.equalToSuperview().inset(6)
+            make.centerY.equalToSuperview()
+            make.width.equalToSuperview().multipliedBy(0.35)
+            make.height.equalTo(coinIcon.snp.width)
+        }
+        coinsLabel.snp.makeConstraints { make in
+            make.leading.equalTo(coinIcon.snp.trailing).offset(4)
+            make.centerY.equalToSuperview()
+            make.trailing.equalToSuperview().inset(6)
+        }
+        coinContainer.snp.makeConstraints { make in
+            make.centerY.equalToSuperview()
+            make.trailing.equalTo(crystalContainer.snp.leading).offset(-6)
+            make.height.equalTo(coinContainer.snp.width).multipliedBy(0.48)
+            make.width.equalToSuperview().multipliedBy(0.28)
         }
     }
       
@@ -324,6 +289,12 @@ class MainMenuViewController: BaseViewController {
                textColor = UIColor(red: 0.15, green: 0.03, blue: 0.43, alpha: 1.00)
            }
        }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        
+        avatarImageView.layer.cornerRadius = avatarImageView.bounds.width / 2
+    }
     
     override func updateAvatarDisplay() {
             DispatchQueue.main.async { [self] in

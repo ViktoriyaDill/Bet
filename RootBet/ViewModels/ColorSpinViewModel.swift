@@ -28,7 +28,7 @@ class ColorSpinViewModel: BaseGameViewModel {
     
     private func setupSpinWheel() {
         spinItems = colors.enumerated().map { index, color in
-            ColorSpinItem(color: color, points: (index + 1) * 10)
+            ColorSpinItem(color: color, coins: (index + 1) * 10)
         }
     }
     
@@ -51,7 +51,7 @@ class ColorSpinViewModel: BaseGameViewModel {
     private func checkResult() {
         let selectedColor = spinItems.randomElement()?.color ?? .red
         if selectedColor == targetColor {
-            let points = spinItems.first(where: { $0.color == selectedColor })?.points ?? 0
+            let points = spinItems.first(where: { $0.color == selectedColor })?.coins ?? 0
             updateScore(score + points)
             HapticManager.shared.success()
         } else {

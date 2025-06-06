@@ -249,14 +249,23 @@ class AvatarSelectionViewController: BaseViewController {
     }
     
     private func loadCurrentAvatar() {
-        let current = userService.avatarImageName
-        if let idx = avatars.firstIndex(of: current) {
+        let currentAvatar = userService.avatarImageName
+        if let idx = avatars.firstIndex(of: currentAvatar) {
             selectedAvatarIndex = idx
         }
         selectedAvatarImageView.image = UIImage(named: avatars[selectedAvatarIndex])
         avatarNameLabel.text = avatars[selectedAvatarIndex]
         selectedAvatarImageView.backgroundColor = userService.avatarBackgroundColor
+        
+        let currentBg = userService.avatarBackgroundColor
+        if let idxColor = bgColors.firstIndex(where: { $0 == currentBg }) {
+            selectedBgColorIndex = idxColor
+        }
+        for (i, view) in bgColorStack.arrangedSubviews.enumerated() {
+            view.layer.borderWidth = (i == selectedBgColorIndex) ? 3 : 0
+        }
     }
+
     
     @objc private func colorTapped(_ gesture: UITapGestureRecognizer) {
         guard let view = gesture.view else { return }

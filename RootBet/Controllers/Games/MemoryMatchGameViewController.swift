@@ -40,7 +40,7 @@ class MemoryMatchGameViewController: BaseGameViewController {
         cardsCollectionView.snp.makeConstraints { make in
             make.top.equalTo(timeLabel.snp.bottom).offset(20)
             make.leading.trailing.equalToSuperview().inset(20)
-            make.bottom.equalTo(startButton.snp.top).offset(-20)
+            make.bottom.equalTo(playButton.snp.top).offset(-20)
         }
     }
     
@@ -48,12 +48,12 @@ class MemoryMatchGameViewController: BaseGameViewController {
         viewModel.delegate = self
     }
     
-    override func startButtonTapped() {
-        super.startButtonTapped()
+    override func playButtonTapped() {
+        super.playButtonTapped()
         viewModel.startGame()
-        startButton.setTitle("Game Active", for: .normal)
-        startButton.backgroundColor = .systemGray
-        startButton.isEnabled = false
+        playButton.setTitle("Game Active", for: .normal)
+        playButton.backgroundColor = .systemGray
+        playButton.isEnabled = false
         cardsCollectionView.reloadData()
     }
 }
@@ -82,14 +82,16 @@ extension MemoryMatchGameViewController: UICollectionViewDataSource, UICollectio
 }
 
 extension MemoryMatchGameViewController: GameViewModelDelegate {
+    func infoButtoTapped() {}
+    
     func gameDidStart() {
         cardsCollectionView.reloadData()
     }
     
     func gameDidEnd(score: Int) {
-        startButton.setTitle("Start Game", for: .normal)
-        startButton.backgroundColor = .systemGreen
-        startButton.isEnabled = true
+        playButton.setTitle("Start Game", for: .normal)
+        playButton.backgroundColor = .systemGreen
+        playButton.isEnabled = true
         
         let alert = UIAlertController(title: "Congratulations!", message: "All pairs matched!\nFinal Score: \(score)", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))
