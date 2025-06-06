@@ -125,9 +125,6 @@ class BubbleCatchGameViewController: BaseGameViewController {
 }
 
 extension BubbleCatchGameViewController: GameViewModelDelegate {
-    func infoButtoTapped() {
-        print("infoButtoTapped")
-    }
     
     func gameDidStart() {
         bubbleViews.forEach { $0.removeFromSuperview() }

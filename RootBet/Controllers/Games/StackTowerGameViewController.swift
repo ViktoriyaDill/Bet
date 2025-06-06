@@ -83,7 +83,7 @@ class StackTowerGameViewController: BaseGameViewController {
 }
 
 extension StackTowerGameViewController: GameViewModelDelegate {
-    func infoButtoTapped() {}
+
     
     func gameDidStart() {
         blockViews.forEach { $0.removeFromSuperview() }

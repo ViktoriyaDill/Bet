@@ -344,11 +344,7 @@ class ColorSpinGameViewController: BaseGameViewController {
 }
 
 extension ColorSpinGameViewController: GameViewModelDelegate {
-    
-    func infoButtoTapped() {
-        print("infoButtoTapped")
-    }
-    
+
     func gameDidStart() {
         startNewGame()
     }

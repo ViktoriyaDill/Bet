@@ -10,7 +10,6 @@ import SnapKit
 
 class BaseGameViewController: UIViewController {
     
-    
     let backgroundImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
@@ -275,7 +274,10 @@ class BaseGameViewController: UIViewController {
     }
     
     @objc private func infoButtonTapped() {
-        // Показ правил гри, якщо потрібно
+        let infoVC = InfoViewController()
+        infoVC.gameType = .colorSpin
+        infoVC.modalPresentationStyle = .fullScreen
+        present(infoVC, animated: true)
     }
     
     @objc func playButtonTapped() {
@@ -284,11 +286,11 @@ class BaseGameViewController: UIViewController {
         switch gameState {
         case .ready:
             gameState = .spinning
-            configurePlayButton(for: .spinning)
+//            configurePlayButton(for: .spinning)
             
         case .spinning:
             gameState = .stopping
-            configurePlayButton(for: .stopping)
+//            configurePlayButton(for: .stopping)
             
         case .stopping:
             // stopn game
@@ -296,18 +298,18 @@ class BaseGameViewController: UIViewController {
         }
     }
     
-    func configurePlayButton(for state: GameState) {
-        switch state {
-        case .ready:
-            playButton.setTitle("Play", for: .normal)
-            
-        case .spinning:
-            playButton.setTitle("Spin", for: .normal)
-            
-        case .stopping:
-            playButton.setTitle("Stop", for: .normal)
-        }
-    }
+//    func configurePlayButton(for state: GameState) {
+//        switch state {
+//        case .ready:
+//            playButton.setTitle("Play", for: .normal)
+//            
+//        case .spinning:
+//            playButton.setTitle("Spin", for: .normal)
+//            
+//        case .stopping:
+//            playButton.setTitle("Stop", for: .normal)
+//        }
+//    }
     
     private func configureGameType() {
         guard let type = self.gameType else { return }
