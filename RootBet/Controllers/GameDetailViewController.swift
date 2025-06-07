@@ -221,23 +221,19 @@ final class GameDetailViewController: UIViewController {
         case 0:
             let vc = ColorSpinGameViewController()
             vc.gameType = .colorSpin
-            vc.modalPresentationStyle = .fullScreen
-            present(vc, animated: true)
+            navigationController?.pushViewController(vc, animated: false)
         case 1:
             let vc = StackTowerGameViewController()
             vc.gameType = .stackTower
-            vc.modalPresentationStyle = .fullScreen
-            present(vc, animated: true)
+            navigationController?.pushViewController(vc, animated: false)
         case 2:
             let vc = BubbleCatchGameViewController()
             vc.gameType = .bubbleCatch
-            vc.modalPresentationStyle = .fullScreen
-            present(vc, animated: true)
+            navigationController?.pushViewController(vc, animated: false)
         case 3:
             let vc = MemoryMatchGameViewController()
             vc.gameType = .memoryMatch
-            vc.modalPresentationStyle = .fullScreen
-            present(vc, animated: true)
+            navigationController?.pushViewController(vc, animated: false)
         default:
             break
         }

@@ -160,7 +160,7 @@ class WinLoseViewController: UIViewController {
     }
     
     private func stackTowerResult(by score: String, imageName: String ) {
-        background.image = UIImage(named: "imageName")
+        background.image = UIImage(named: imageName)
         mainTitle.text = "Game Over!"
         subTitle.isHidden = !isNewRecord
         resultTitle.text = score

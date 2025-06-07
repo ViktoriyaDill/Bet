@@ -126,8 +126,8 @@ class ColorSpinGameViewController: BaseGameViewController {
     }
     
     private func setupAudioPlayer(fileName: String, player: inout AVAudioPlayer?) {
-        guard let url = Bundle.main.url(forResource: fileName, withExtension: "mp3") else {
-            print("⚠️ Audio file not found: \(fileName).mp3")
+        guard let url = Bundle.main.url(forResource: fileName, withExtension: "wav") else {
+            print("⚠️ Audio file not found: \(fileName).wav")
             return
         }
         do {

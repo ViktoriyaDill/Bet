@@ -136,14 +136,6 @@ class BaseGameViewController: UIViewController {
         return button
     }()
     
-    enum GameState {
-        case ready    // кнопка "Play"
-        case spinning // кнопка "Spin"
-        case stopping // кнопка "Stop"
-    }
-    
-    
-    private var gameState: GameState = .ready
     var gameType: GameType?
     
     override func viewDidLoad() {
@@ -270,7 +262,7 @@ class BaseGameViewController: UIViewController {
     
     @objc func backButtonTapped() {
         HapticManager.shared.lightTap()
-        dismiss(animated: false)
+        navigationController?.popViewController(animated: false)
     }
     
     @objc private func infoButtonTapped() {
@@ -282,34 +274,8 @@ class BaseGameViewController: UIViewController {
     
     @objc func playButtonTapped() {
         HapticManager.shared.mediumTap()
-        
-        switch gameState {
-        case .ready:
-            gameState = .spinning
-//            configurePlayButton(for: .spinning)
-            
-        case .spinning:
-            gameState = .stopping
-//            configurePlayButton(for: .stopping)
-            
-        case .stopping:
-            // stopn game
-            break
-        }
     }
-    
-//    func configurePlayButton(for state: GameState) {
-//        switch state {
-//        case .ready:
-//            playButton.setTitle("Play", for: .normal)
-//            
-//        case .spinning:
-//            playButton.setTitle("Spin", for: .normal)
-//            
-//        case .stopping:
-//            playButton.setTitle("Stop", for: .normal)
-//        }
-//    }
+
     
     private func configureGameType() {
         guard let type = self.gameType else { return }
