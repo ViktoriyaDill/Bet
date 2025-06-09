@@ -82,6 +82,10 @@ extension MemoryMatchGameViewController: UICollectionViewDataSource, UICollectio
 }
 
 extension MemoryMatchGameViewController: GameViewModelDelegate {
+    func livesDidUpdate(_ lives: Int) {}
+    
+    func timeDidUpdate(_ time: Int) { }
+    
 
     func gameDidStart() {
         cardsCollectionView.reloadData()

@@ -613,6 +613,10 @@ class StackTowerGameViewController: BaseGameViewController {
 
 // MARK: - GameViewModelDelegate
 extension StackTowerGameViewController: GameViewModelDelegate {
+    func livesDidUpdate(_ lives: Int) {}
+    
+    func timeDidUpdate(_ time: Int) {}
+    
     
     func gameDidStart() {
         startGame()

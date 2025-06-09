@@ -344,6 +344,10 @@ class ColorSpinGameViewController: BaseGameViewController {
 }
 
 extension ColorSpinGameViewController: GameViewModelDelegate {
+    func livesDidUpdate(_ lives: Int) {}
+    
+    func timeDidUpdate(_ time: Int) {}
+    
 
     func gameDidStart() {
         startNewGame()
