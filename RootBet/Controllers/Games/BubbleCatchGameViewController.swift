@@ -26,16 +26,29 @@ class BubbleCatchGameViewController: BaseGameViewController {
         return view
     }()
     
-    private let basketView: UIView = {
+    private let basket1View: UIView = {
         let view = UIView()
         view.backgroundColor = UIColor(hex: "#8346BC")
-        view.layer.cornerRadius = 8
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.white.cgColor
+        return view
+    }()
+    
+    private let basket2View: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor(hex: "#5722A1")
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.white.cgColor
         return view
     }()
     
     // MARK: - Game Objects
     private var bubbleViews: [UIView] = []
     private var gameDisplayLink: CADisplayLink?
+    
+    // Tracking touch for baskets
+    private var activeTouchBasket1: UITouch?
+    private var activeTouchBasket2: UITouch?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -51,11 +64,15 @@ class BubbleCatchGameViewController: BaseGameViewController {
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        guard gameAreaView.bounds.width > 0 && gameAreaView.bounds.height > 0 else { return }
         
         viewModel.updateGameArea(
             width: gameAreaView.bounds.width,
             height: gameAreaView.bounds.height
         )
+        if gameState != .playing {
+            setupInitialBasketPositions()
+        }
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -67,7 +84,8 @@ class BubbleCatchGameViewController: BaseGameViewController {
     // MARK: - UI Setup
     private func setupBubbleCatchUI() {
         view.addSubview(gameAreaView)
-        gameAreaView.addSubview(basketView)
+        gameAreaView.addSubview(basket1View)
+        gameAreaView.addSubview(basket2View)
     }
     
     private func setupBubbleCatchConstraints() {
@@ -77,66 +95,156 @@ class BubbleCatchGameViewController: BaseGameViewController {
             make.bottom.equalTo(playButton.snp.top).offset(-20)
         }
         
-        basketView.snp.makeConstraints { make in
+        basket1View.snp.makeConstraints { make in
             make.bottom.equalToSuperview().offset(-20)
-            make.centerX.equalToSuperview()
-            make.width.equalTo(80)
-            make.height.equalTo(40)
+            make.width.equalTo(160)
+            make.height.equalTo(48)
+            make.centerX.equalToSuperview().multipliedBy(0.5)
+        }
+        
+        basket2View.snp.makeConstraints { make in
+            make.bottom.equalToSuperview().offset(-20)
+            make.width.equalTo(160)
+            make.height.equalTo(48)
+            make.centerX.equalToSuperview().multipliedBy(1.5)
         }
     }
     
     private func setupBubbleCatchGestures() {
-        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(basketPanned(_:)))
-        basketView.addGestureRecognizer(panGesture)
-        
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(basketTapped(_:)))
-        basketView.addGestureRecognizer(tapGesture)
-        
-        let gameAreaTapGesture = UITapGestureRecognizer(target: self, action: #selector(gameAreaTapped(_:)))
-        gameAreaView.addGestureRecognizer(gameAreaTapGesture)
+        gameAreaView.isMultipleTouchEnabled = true
+        gameAreaView.isUserInteractionEnabled = true
+        basket1View.isUserInteractionEnabled = true
+        basket2View.isUserInteractionEnabled = true
     }
     
     private func bindViewModel() {
         viewModel.delegate = self
     }
     
-    // MARK: - Gesture Handlers
-    @objc private func basketPanned(_ gesture: UIPanGestureRecognizer) {
-        let translation = gesture.translation(in: gameAreaView)
-        viewModel.moveBasket(to: viewModel.basketPosition + translation.x)
-        updateBasketPosition()
-        gesture.setTranslation(.zero, in: gameAreaView)
+    // MARK: - Touch Handling for Baskets
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard gameState == .playing else {
+              print("❌ Touch ignored - game not playing")
+              return
+          }
+          
+          for touch in touches {
+              let location = touch.location(in: gameAreaView)
+              print("👆 Touch began at: \(location)")
+              
+              if basket1View.frame.contains(location) && activeTouchBasket1 == nil {
+                  activeTouchBasket1 = touch
+                  print("🏀 Basket1 touched!")
+                  HapticManager.shared.lightTap()
+              }
+              else if basket2View.frame.contains(location) && activeTouchBasket2 == nil {
+                  activeTouchBasket2 = touch
+                  print("🏀 Basket2 touched!")
+                  HapticManager.shared.lightTap()
+              }
+          }
     }
     
-    @objc private func basketTapped(_ gesture: UITapGestureRecognizer) {
-        viewModel.toggleBasketType()
-        updateBasketColor()
-        HapticManager.shared.lightTap()
-    }
-    
-    @objc private func gameAreaTapped(_ gesture: UITapGestureRecognizer) {
-        let location = gesture.location(in: gameAreaView)
-        let gameAreaCenter = gameAreaView.bounds.width / 2
-        let targetPosition = location.x - gameAreaCenter
-        
-        viewModel.moveBasket(to: targetPosition)
-        
-        UIView.animate(withDuration: 0.2) {
-            self.updateBasketPosition()
+    // MARK: - Touch Handling
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard gameState == .playing else { return }
+        for touch in touches {
+            let loc = touch.location(in: gameAreaView)
+            if touch == activeTouchBasket1 {
+                viewModel.moveBasket1(to: loc.x)
+                basket1View.center.x = loc.x
+            } else if touch == activeTouchBasket2 {
+                viewModel.moveBasket2(to: loc.x)
+                basket2View.center.x = loc.x
+            }
         }
     }
     
-    private func updateBasketPosition() {
-        basketView.snp.updateConstraints { make in
-            make.centerX.equalToSuperview().offset(viewModel.basketPosition)
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        for touch in touches {
+            if touch == activeTouchBasket1 {
+                activeTouchBasket1 = nil
+            } else if touch == activeTouchBasket2 {
+                activeTouchBasket2 = nil
+            }
+        }
+    }
+    
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        touchesEnded(touches, with: event)
+    }
+    
+    // MARK: - Basket Position Updates
+    private func updateBasketPositions() {
+        updateBasket1PositionSmooth()
+        updateBasket2PositionSmooth()
+    }
+    
+    private func setupInitialBasketPositions() {
+        let gameAreaWidth = gameAreaView.bounds.width
+        let gameAreaHeight = gameAreaView.bounds.height
+        
+        let basket1X = gameAreaWidth * 0.25
+        let basket2X = gameAreaWidth * 0.75
+        let basketsY = gameAreaHeight - 20 - basket1View.bounds.height/2
+        
+        basket1View.center = CGPoint(x: basket1X, y: basketsY)
+        basket2View.center = CGPoint(x: basket2X, y: basketsY)
+        
+        viewModel.moveBasket1(to: basket1X)
+        viewModel.moveBasket2(to: basket2X)
+        
+        print("🏀 Initial baskets positioned - Basket1: \(basket1X), Basket2: \(basket2X), GameArea width: \(gameAreaWidth)")
+    }
+    
+    private func updateBasket1Position() {
+        let basket = viewModel.basket1
+        let gameAreaCenter = gameAreaView.bounds.width / 2
+        let offsetFromCenter = basket.x - gameAreaCenter
+        
+        basket1View.snp.updateConstraints { make in
+            make.centerX.equalToSuperview().offset(offsetFromCenter)
         }
         view.layoutIfNeeded()
     }
     
-    private func updateBasketColor() {
-        UIView.animate(withDuration: 0.2) {
-            self.basketView.backgroundColor = self.viewModel.currentBasketType.color
+    private func updateBasket2Position() {
+        let basket = viewModel.basket2
+        let gameAreaCenter = gameAreaView.bounds.width / 2
+        let offsetFromCenter = basket.x - gameAreaCenter
+        
+        basket2View.snp.updateConstraints { make in
+            make.centerX.equalToSuperview().offset(offsetFromCenter)
         }
+        view.layoutIfNeeded()
+    }
+    
+    private func updateBasket1PositionSmooth() {
+        let basket = viewModel.basket1
+        let gameAreaCenter = gameAreaView.bounds.width / 2
+        let offsetFromCenter = basket.x - gameAreaCenter
+        let newFrame = CGRect(
+            x: basket.x - basket.width/2,
+            y: basket2View.frame.origin.y,
+            width: basket.width,
+            height: basket.height
+        )
+        
+        basket1View.frame = newFrame
+    }
+    
+    private func updateBasket2PositionSmooth() {
+        let basket = viewModel.basket2
+        let gameAreaCenter = gameAreaView.bounds.width / 2
+        let offsetFromCenter = basket.x - gameAreaCenter
+        let newFrame = CGRect(
+            x: basket.x - basket.width/2,
+            y: basket2View.frame.origin.y,
+            width: basket.width,
+            height: basket.height
+        )
+        
+        basket2View.frame = newFrame
     }
     
     // MARK: - Game Loop
@@ -167,7 +275,7 @@ class BubbleCatchGameViewController: BaseGameViewController {
         // Add new bubble views
         while bubbleViews.count < activeBubbles.count {
             let bubbleView = createBubbleView()
-            gameAreaView.insertSubview(bubbleView, belowSubview: basketView)
+            gameAreaView.insertSubview(bubbleView, belowSubview: basket1View)
             bubbleViews.append(bubbleView)
         }
         
@@ -182,7 +290,9 @@ class BubbleCatchGameViewController: BaseGameViewController {
     
     private func createBubbleView() -> UIView {
         let bubbleView = UIView()
-        bubbleView.layer.cornerRadius = 15
+        bubbleView.layer.cornerRadius = 34
+        bubbleView.layer.borderWidth = 1
+        bubbleView.layer.borderColor = UIColor.white.cgColor
         return bubbleView
     }
     
@@ -214,17 +324,21 @@ class BubbleCatchGameViewController: BaseGameViewController {
     
     private func startGame() {
         gameState = .playing
-        playButton.setTitle("Pause", for: .normal)
-        playButton.backgroundColor = .systemGray
-        
         viewModel.startGame()
         startGameLoop()
     }
     
+    
     private func pauseGame() {
         gameState = .ready
-        playButton.setTitle("Resume", for: .normal)
-        playButton.backgroundColor = UIColor(hex: "#A77BCA")
+        playButton.isHidden = false
+        
+        gameAreaView.snp.remakeConstraints { make in
+            make.top.equalTo(timeLabel.snp.bottom).offset(20)
+            make.leading.trailing.equalToSuperview().inset(20)
+            make.bottom.equalTo(playButton.snp.top).offset(-20)
+        }
+        view.layoutIfNeeded()
         
         viewModel.pauseGame()
         stopGameLoop()
@@ -238,18 +352,19 @@ class BubbleCatchGameViewController: BaseGameViewController {
         bubbleViews.forEach { $0.removeFromSuperview() }
         bubbleViews.removeAll()
         
-        // Reset basket
-        viewModel.moveBasket(to: 0)
-        updateBasketPosition()
-        basketView.backgroundColor = UIColor(hex: "#8346BC")
+        playButton.isHidden = false
+        gameAreaView.snp.remakeConstraints { make in
+            make.top.equalTo(timeLabel.snp.bottom).offset(20)
+            make.leading.trailing.equalToSuperview().inset(20)
+            make.bottom.equalTo(playButton.snp.top).offset(-20)
+        }
+        view.layoutIfNeeded()
         
-        // Reset UI
-        playButton.setTitle("Start Game", for: .normal)
-        playButton.backgroundColor = UIColor(hex: "#A77BCA")
         updateUI()
     }
     
     // MARK: - UI Updates
+    
     private func updateUI() {
         coinsLabel.text = "\(UserDataService.shared.coins)"
     }
@@ -268,25 +383,31 @@ class BubbleCatchGameViewController: BaseGameViewController {
         timeLabel.text = String(format: "%02d:%02d", minutes, remainingSeconds)
     }
     
-    private func showGameOverAlert() {
-        let alert = UIAlertController(
-            title: "Game Over!",
-            message: "Final Score: \(scoreLabel.text ?? "0")",
-            preferredStyle: .alert
-        )
+    private func showGameResult(score: Int, isNewRecord: Bool) {
+        let resultType: ResultType = .lost
         
-        let playAgainAction = UIAlertAction(title: "Play Again", style: .default) { [weak self] _ in
-            self?.resetGame()
+        let winLoseVC = WinLoseViewController()
+        winLoseVC.gameType = .bubbleCatch
+        winLoseVC.resultType = resultType
+        winLoseVC.score = "\(score)"
+        winLoseVC.isNewRecord = isNewRecord
+        winLoseVC.delegate = self
+        
+        winLoseVC.modalPresentationStyle = .fullScreen
+        present(winLoseVC, animated: true)
+    }
+    
+    private func isNewRecord(score: Int) -> Bool {
+        let bestScore = UserDefaults.standard.integer(forKey: "BubbleCatchBestScore")
+        return score > bestScore
+    }
+    
+    private func saveBestScore(_ score: Int) {
+        let bestScore = UserDefaults.standard.integer(forKey: "BubbleCatchBestScore")
+        if score > bestScore {
+            UserDefaults.standard.set(score, forKey: "BubbleCatchBestScore")
+            UserDefaults.standard.synchronize()
         }
-        
-        let homeAction = UIAlertAction(title: "Home", style: .cancel) { [weak self] _ in
-            self?.navigationController?.popViewController(animated: true)
-        }
-        
-        alert.addAction(playAgainAction)
-        alert.addAction(homeAction)
-        
-        present(alert, animated: true)
     }
     
     deinit {
@@ -298,14 +419,28 @@ class BubbleCatchGameViewController: BaseGameViewController {
 extension BubbleCatchGameViewController: GameViewModelDelegate {
     
     func gameDidStart() {
-        resetGame()
         gameState = .playing
+        playButton.isHidden = true
+        gameAreaView.snp.remakeConstraints { make in
+            make.top.equalTo(timeLabel.snp.bottom).offset(20)
+            make.leading.trailing.equalToSuperview().inset(20)
+            make.bottom.equalToSuperview().offset(-20)
+        }
+        view.layoutIfNeeded()
+        
+        bubbleViews.forEach { $0.removeFromSuperview() }
+        bubbleViews.removeAll()
+        
         HapticManager.shared.lightTap()
     }
     
     func gameDidEnd(score: Int) {
         gameState = .gameOver
         stopGameLoop()
+        
+        // Save best score first
+        saveBestScore(score)
+        let isRecord = isNewRecord(score: score)
         
         // Add coins based on score
         let coinsEarned = score / 10
@@ -319,7 +454,7 @@ extension BubbleCatchGameViewController: GameViewModelDelegate {
         playButton.backgroundColor = UIColor(hex: "#A77BCA")
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.showGameOverAlert()
+            self?.showGameResult(score: score, isNewRecord: isRecord)
         }
         
         HapticManager.shared.error()
@@ -340,5 +475,27 @@ extension BubbleCatchGameViewController: GameViewModelDelegate {
     
     func timeDidUpdate(_ time: Int) {
         updateTime(time)
+    }
+}
+
+// MARK: - WinLoseDegateProtocol
+
+extension BubbleCatchGameViewController: WinLoseDegateProtocol {
+    func tryAgainTapped() {
+        dismiss(animated: false) { [weak self] in
+            self?.resetGame()
+        }
+    }
+    
+    func homeTapped() {
+        dismiss(animated: false) { [weak self] in
+            self?.navigationController?.popToRootViewController(animated: false)
+        }
+    }
+    
+    func claimTapped() {
+        dismiss(animated: false) { [weak self] in
+            self?.navigationController?.popToRootViewController(animated: false)
+        }
     }
 }

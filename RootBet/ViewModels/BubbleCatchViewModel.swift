@@ -8,8 +8,6 @@
 import Foundation
 import UIKit
 
-
-
 class BubbleCatchViewModel {
     weak var delegate: GameViewModelDelegate?
     
@@ -25,7 +23,6 @@ class BubbleCatchViewModel {
     private var livesRemaining = 3
     private var gameTime = 0
     private var gameSpeed: CGFloat = 1.0
-    // Track consecutive successful catches for multipliers
     private var consecutiveCatchCount = 0
 
     // MARK: - Bubble Properties
@@ -38,14 +35,25 @@ class BubbleCatchViewModel {
     var gameAreaHeight: CGFloat = 600
 
     // MARK: - Basket Properties
-    var basketPosition: CGFloat = 0
-    private let basketWidth: CGFloat = 80
-    private let basketHeight: CGFloat = 40
+    struct BasketPosition {
+        var x: CGFloat
+        var y: CGFloat
+        let width: CGFloat = 80
+        let height: CGFloat = 40
+        let type: BubbleType
+        
+        var rect: CGRect {
+            return CGRect(x: x - width/2, y: y - height/2, width: width, height: height)
+        }
+    }
+    
+    private(set) var basket1: BasketPosition
+    private(set) var basket2: BasketPosition
 
     // MARK: - Bubble Types
     enum BubbleType: CaseIterable {
-        case purple1  // #8346BC - catch in purple1 basket
-        case purple2  // #5722A1 - catch in purple2 basket
+        case purple1  // #8346BC
+        case purple2  // #5722A1
 
         var color: UIColor {
             switch self {
@@ -63,7 +71,7 @@ class BubbleCatchViewModel {
         var position: CGPoint
         var velocity: CGFloat
         let type: BubbleType
-        let size: CGFloat = 30
+        let size: CGFloat = 68
         var isActive: Bool = true
 
         var color: UIColor { type.color }
@@ -87,38 +95,40 @@ class BubbleCatchViewModel {
         }
     }
 
-    // MARK: - Basket Model
-    enum BasketType {
-        case purple1, purple2
-
-        var color: UIColor {
-            switch self {
-            case .purple1: return UIColor(hex: "#8346BC")
-            case .purple2: return UIColor(hex: "#5722A1")
-            }
-        }
-    }
-
     // MARK: - Game Data
     private(set) var bubbles: [Bubble] = []
-    private(set) var currentBasketType: BasketType = .purple1
+
+    // MARK: - Initialization
+    init() {
+        basket1 = BasketPosition(x: 100, y: 500, type: .purple1)
+        basket2 = BasketPosition(x: 235, y: 500, type: .purple2)
+    }
 
     // MARK: - Public Interface
     func updateGameArea(width: CGFloat, height: CGFloat) {
         gameAreaWidth = width
         gameAreaHeight = height
+        
+        let basketY = gameAreaHeight - 40
+        basket1.x = gameAreaWidth * 0.25
+        basket1.y = basketY
+        
+        basket2.x = gameAreaWidth * 0.75
+        basket2.y = basketY
     }
 
-    func moveBasket(to position: CGFloat) {
-        let halfBasketWidth = basketWidth / 2
-        let minX = -gameAreaWidth/2 + halfBasketWidth
-        let maxX = gameAreaWidth/2 - halfBasketWidth
-
-        basketPosition = max(minX, min(maxX, position))
+    func moveBasket1(to position: CGFloat) {
+        let halfWidth = basket1.width / 2
+        let minX = -halfWidth
+        let maxX = gameAreaWidth + halfWidth
+        basket1.x = max(minX, min(maxX, position))
     }
-
-    func toggleBasketType() {
-        currentBasketType = currentBasketType == .purple1 ? .purple2 : .purple1
+    
+    func moveBasket2(to position: CGFloat) {
+        let halfWidth = basket2.width / 2
+        let minX = -halfWidth
+        let maxX = gameAreaWidth + halfWidth
+        basket2.x = max(minX, min(maxX, position))
     }
 
     func startGame() {
@@ -159,10 +169,7 @@ class BubbleCatchViewModel {
         gameTime = 0
         gameSpeed = 1.0
         consecutiveCatchCount = 0
-        basketPosition = 0
-        currentBasketType = .purple1
         bubbles.removeAll()
-
         bubbleSpawnRate = 1.5
         bubbleFallSpeed = 2.0
         maxBubbles = 6
@@ -191,13 +198,10 @@ class BubbleCatchViewModel {
     private func stopGameTimers() {
         timeTimer?.invalidate()
         timeTimer = nil
-
         gameTimer?.invalidate()
         gameTimer = nil
-
         bubbleSpawnTimer?.invalidate()
         bubbleSpawnTimer = nil
-
         bubbleUpdateTimer?.invalidate()
         bubbleUpdateTimer = nil
     }
@@ -209,7 +213,6 @@ class BubbleCatchViewModel {
 
     private func scheduleNextBubbleSpawn() {
         let spawnDelay = bubbleSpawnRate / Double(gameSpeed)
-
         bubbleSpawnTimer?.invalidate()
         bubbleSpawnTimer = Timer.scheduledTimer(withTimeInterval: spawnDelay, repeats: false) { [weak self] _ in
             self?.spawnBubble()
@@ -218,113 +221,73 @@ class BubbleCatchViewModel {
     }
 
     private func updateGame() {
-        // Define basket frame for collision detection
-           let basketRect = CGRect(
-               x: basketPosition - basketWidth/2,
-               y: gameAreaHeight - basketHeight - 20,
-               width: basketWidth,
-               height: basketHeight
-           )
-
-           // Iterate backwards so we can remove bubbles safely
-           for index in (0..<bubbles.count).reversed() {
+           guard isGameActive else { return }
+           
+           let basket1Rect = basket1.rect
+           let basket2Rect = basket2.rect
+           var indicesToRemove: [Int] = []
+           
+           for index in bubbles.indices {
                var bubble = bubbles[index]
+               
+               guard bubble.isActive else {
+                   indicesToRemove.append(index)
+                   continue
+               }
 
-               guard bubble.isActive else { continue }
-
-               // Move bubble
                bubble.updatePosition()
-
-               // Check for catch
-               if bubble.intersects(with: basketRect) {
-                   // Compare basket and bubble types for correctness
-                   if (bubble.type == .purple1 && currentBasketType == .purple1) ||
-                      (bubble.type == .purple2 && currentBasketType == .purple2) {
-                       // Correct catch
-                       consecutiveCatchCount += 1
-                       let multiplier = consecutiveCatchCount
-                       let pointsToAdd = bubble.type.points * multiplier
-                       addScore(pointsToAdd)
-                   } else {
-                       // Wrong basket color
-                       loseLife()
-                   }
-                   // Deactivate bubble
-                   bubbles[index].isActive = false
-                   continue
-               }
-
-               // Check if bubble fell past bottom
-               if bubble.isOffScreen(gameHeight: gameAreaHeight) {
-                   bubbles[index].isActive = false
-                   loseLife()
-                   continue
-               }
-
-               // Update the stored bubble (position change)
                bubbles[index] = bubble
+
+               var caught = false
+               
+               if bubble.intersects(with: basket1Rect) {
+                   handleBubbleCatch(bubble, caughtBasketType: basket1.type)
+                   indicesToRemove.append(index)
+                   caught = true
+               }
+               else if bubble.intersects(with: basket2Rect) {
+                   handleBubbleCatch(bubble, caughtBasketType: basket2.type)
+                   indicesToRemove.append(index)
+                   caught = true
+               }
+
+               if caught { continue }
+
+               if bubble.isOffScreen(gameHeight: gameAreaHeight) {
+                   loseLife()
+                   indicesToRemove.append(index)
+                   continue
+               }
            }
+           for index in indicesToRemove.reversed() {
+               guard index < bubbles.count else { continue }
+               bubbles.remove(at: index)
+           }
+       }
 
-           // Remove any inactive bubbles
-           removeInactiveBubbles()
-    }
-
-    private func updateBubbles() {
-        // Safely iterate through the original bubble set and exit early if game ends
-        let countAtStart = bubbles.count
-        for i in 0..<countAtStart {
-            // Stop if bubbles have been cleared (e.g., game ended)
-            guard i < bubbles.count else { break }
-            bubbles[i].updatePosition()
-            if bubbles[i].isOffScreen(gameHeight: gameAreaHeight) {
-                bubbles[i].isActive = false
-                loseLife() // Lose life for any missed bubble
-                // If the game just ended (bubbles removed), exit loop
-                if !isGameActive {
-                    return
-                }
-            }
-        }
-    }
-
-    private func checkCollisions() {
-        let basketRect = CGRect(
-            x: basketPosition - basketWidth/2,
-            y: gameAreaHeight - basketHeight - 20,
-            width: basketWidth,
-            height: basketHeight
-        )
-
-        for i in bubbles.indices {
-            if bubbles[i].isActive && bubbles[i].intersects(with: basketRect) {
-                handleBubbleCatch(bubbles[i])
-                bubbles[i].isActive = false
-            }
-        }
-    }
-
-    private func handleBubbleCatch(_ bubble: Bubble) {
-        let isCorrectBasket =
-            (bubble.type == .purple1 && currentBasketType == .purple1) ||
-            (bubble.type == .purple2 && currentBasketType == .purple2)
+    private func handleBubbleCatch(_ bubble: Bubble, caughtBasketType: BubbleType) {
+        let isCorrectBasket = bubble.type == caughtBasketType
 
         if isCorrectBasket {
-            // Increase streak and apply multiplier
             consecutiveCatchCount += 1
-            let multiplier = consecutiveCatchCount
+            let multiplier = min(consecutiveCatchCount, 5)
             let pointsToAdd = bubble.type.points * multiplier
             addScore(pointsToAdd)
+            
+            print("✅ Correct catch! \(bubble.type) bubble in \(caughtBasketType) basket. +\(pointsToAdd) points (x\(multiplier) multiplier)")
         } else {
+            consecutiveCatchCount = 0
             loseLife()
+            print("❌ Wrong basket! \(bubble.type) bubble in \(caughtBasketType) basket. Life lost.")
         }
     }
 
     private func spawnBubble() {
-        guard isGameActive && bubbles.filter({ $0.isActive }).count < maxBubbles else { return }
+        guard isGameActive && bubbles.count < maxBubbles else { return }
 
         let bubbleType: BubbleType = Bool.random() ? .purple1 : .purple2
-        // Introduce variation in fall speed
         let randomFactor = CGFloat.random(in: 0.8...1.2)
+        
         let bubble = Bubble(
             position: CGPoint(
                 x: CGFloat.random(in: 30...(gameAreaWidth - 30)),
@@ -335,10 +298,7 @@ class BubbleCatchViewModel {
         )
 
         bubbles.append(bubble)
-    }
-
-    private func removeInactiveBubbles() {
-        bubbles.removeAll { !$0.isActive }
+        print("🫧 Spawned \(bubbleType) bubble at x: \(bubble.position.x)")
     }
 
     private func addScore(_ points: Int) {
@@ -347,13 +307,14 @@ class BubbleCatchViewModel {
     }
 
     private func loseLife() {
-        // Reset multiplier on any missed or wrong catch
         consecutiveCatchCount = 0
         livesRemaining = max(0, livesRemaining - 1)
         delegate?.livesDidUpdate(livesRemaining)
 
         if livesRemaining <= 0 {
-            endGame()
+            DispatchQueue.main.async { [weak self] in
+                self?.endGame()
+            }
         }
     }
 
@@ -362,7 +323,6 @@ class BubbleCatchViewModel {
         bubbleSpawnRate = max(0.8, bubbleSpawnRate - 0.1)
         bubbleFallSpeed = min(3.5, bubbleFallSpeed + 0.2)
         maxBubbles = min(10, maxBubbles + 1)
-
         scheduleNextBubbleSpawn()
     }
 
