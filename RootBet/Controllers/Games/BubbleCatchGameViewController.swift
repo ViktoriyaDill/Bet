@@ -7,6 +7,8 @@
 
 import UIKit
 import SnapKit
+import AVFoundation
+
 
 class BubbleCatchGameViewController: BaseGameViewController {
     
@@ -46,6 +48,12 @@ class BubbleCatchGameViewController: BaseGameViewController {
     private var bubbleViews: [UIView] = []
     private var gameDisplayLink: CADisplayLink?
     
+    // MARK: - Audio players
+    private var catchPlayer:   AVAudioPlayer?
+    private var missPlayer:    AVAudioPlayer?
+    private var overPlayer:    AVAudioPlayer?
+    private var movePlayer:    AVAudioPlayer?
+    
     // Tracking touch for baskets
     private var activeTouchBasket1: UITouch?
     private var activeTouchBasket2: UITouch?
@@ -59,6 +67,7 @@ class BubbleCatchGameViewController: BaseGameViewController {
         setupBubbleCatchConstraints()
         setupBubbleCatchGestures()
         bindViewModel()
+        setupAudioPlayers()
         updateUI()
     }
     
@@ -79,6 +88,39 @@ class BubbleCatchGameViewController: BaseGameViewController {
         super.viewWillDisappear(animated)
         stopGameLoop()
         viewModel.endGame()
+    }
+    
+    // MARK: - Audio setup
+    private func setupAudioPlayers() {
+        setupPlayer(named: "bubble_catch", into: &catchPlayer)
+        setupPlayer(named: "bubble_miss",  into: &missPlayer)
+        setupPlayer(named: "bubble_over",  into: &overPlayer)
+        setupPlayer(named: "basket_move",  into: &movePlayer)
+    }
+    
+    // MARK: - Audio helpers
+    private func playCatch() { catchPlayer?.currentTime = 0; catchPlayer?.play() }
+    private func playMiss() { missPlayer?.currentTime  = 0; missPlayer?.play() }
+    private func playOver() { overPlayer?.currentTime  = 0; overPlayer?.play() }
+    private func playMove() { movePlayer?.currentTime  = 0; movePlayer?.play() }
+
+    private func stopAllSounds() {
+        [catchPlayer, missPlayer, overPlayer, movePlayer].forEach { $0?.stop() }
+    }
+
+
+    private func setupPlayer(named file: String,
+                             into player: inout AVAudioPlayer?) {
+        guard let url = Bundle.main.url(forResource: file, withExtension: "wav") else {
+            print("⚠️ No audio file \(file).wav"); return
+        }
+        do {
+            player = try AVAudioPlayer(contentsOf: url)
+            player?.prepareToPlay()
+            player?.volume = 0.7
+        } catch {
+            print("❌ Audio init error \(file): \(error)")
+        }
     }
     
     // MARK: - UI Setup
@@ -345,6 +387,7 @@ class BubbleCatchGameViewController: BaseGameViewController {
     }
     
     private func resetGame() {
+        stopAllSounds()
         gameState = .ready
         stopGameLoop()
         
@@ -412,6 +455,7 @@ class BubbleCatchGameViewController: BaseGameViewController {
     
     deinit {
         stopGameLoop()
+        stopAllSounds()
     }
 }
 
@@ -456,19 +500,20 @@ extension BubbleCatchGameViewController: GameViewModelDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             self?.showGameResult(score: score, isNewRecord: isRecord)
         }
-        
+        playOver()
         HapticManager.shared.error()
     }
     
     func scoreDidUpdate(_ score: Int) {
         updateScore(score)
+        playCatch()
         HapticManager.shared.lightTap()
     }
     
     func livesDidUpdate(_ lives: Int) {
         updateLives(lives)
-        
         if lives > 0 {
+            playMiss()
             HapticManager.shared.mediumTap()
         }
     }
