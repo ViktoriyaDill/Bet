@@ -273,8 +273,8 @@ class BonusViewController: BaseViewController {
             
         case .challenges:
             HapticManager.shared.lightTap()
-            let settingsVC = SettingsViewController()
-            navigationController?.pushViewController(settingsVC, animated: false)
+            let challengeVC = DailyChallengesViewController()
+            navigationController?.pushViewController(challengeVC, animated: false)
         case .achievements:
             HapticManager.shared.lightTap()
         }
