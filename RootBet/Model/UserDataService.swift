@@ -245,6 +245,11 @@ final class UserDataService {
         coins += amount
     }
     
+    func removeCoins(_ amount: Int) {
+        let newAmount = max(0, coins - amount)
+        coins = newAmount
+    }
+    
     func spendCoins(_ amount: Int) -> Bool {
         if coins >= amount {
             coins -= amount
@@ -341,6 +346,47 @@ final class UserDataService {
         return false
     }
     
+    // MARK: - 2x Boost Management
+    var has2xBoost: Bool {
+        guard let endTime = UserDefaults.standard.object(forKey: "2xBoostEndTime") as? Date else {
+            return false
+        }
+        return Date() < endTime
+    }
+    
+    var boostTimeRemaining: TimeInterval {
+        guard let endTime = UserDefaults.standard.object(forKey: "2xBoostEndTime") as? Date else {
+            return 0
+        }
+        return max(0, endTime.timeIntervalSince(Date()))
+    }
+    
+    func activate2xBoost(minutes: Int) {
+        let endTime = Date().addingTimeInterval(TimeInterval(minutes * 60))
+        UserDefaults.standard.set(endTime, forKey: "2xBoostEndTime")
+        
+        // Notify games about 2x boost activation
+        NotificationCenter.default.post(
+            name: .boost2xActivated,
+            object: nil,
+            userInfo: ["minutes": minutes, "endTime": endTime]
+        )
+        
+        print("⚡ 2x Boost activated for \(minutes) minutes")
+    }
+    
+    func get2xBoostStatus() -> (isActive: Bool, timeRemaining: String) {
+        if has2xBoost {
+            let remaining = boostTimeRemaining
+            let hours = Int(remaining) / 3600
+            let minutes = Int(remaining) % 3600 / 60
+            
+            let timeString = hours > 0 ? "\(hours)h \(minutes)m" : "\(minutes)m"
+            return (true, timeString)
+        }
+        return (false, "")
+    }
+    
     // MARK: - Daily Bonus Statistics
     
     var totalDailyBonusesClaimed: Int {
@@ -384,8 +430,6 @@ final class UserDataService {
             // Completed full week
             currentDailyStreak += 1
         }
-        
-        print("📈 Daily bonus statistics updated - Total: \(totalDailyBonusesClaimed), Streak: \(currentDailyStreak)")
     }
     
     // MARK: - Bonus Status Helpers
@@ -414,9 +458,31 @@ final class UserDataService {
     }
     
     func getGameTimerBonus() -> TimeInterval {
-        // Convert time bonus minutes to seconds for game timers
         return TimeInterval(timeBonusMinutes * 60)
     }
+    
+    var hasDoubleReward: Bool {
+           guard let end = UserDefaults.standard.object(forKey: "DoubleRewardEndTime") as? Date
+           else { return false }
+           return Date() < end
+       }
+
+       var doubleRewardTimeRemaining: TimeInterval {
+           guard let end = UserDefaults.standard.object(forKey: "DoubleRewardEndTime") as? Date
+           else { return 0 }
+           return max(0, end.timeIntervalSince(Date()))
+       }
+
+       func activateDoubleReward(minutes: Int) {
+           let endTime = Date().addingTimeInterval(TimeInterval(minutes * 60))
+           UserDefaults.standard.set(endTime, forKey: "DoubleRewardEndTime")
+
+           NotificationCenter.default.post(
+               name: .doubleRewardActivated,
+               object: nil,
+               userInfo: ["minutes": minutes, "endTime": endTime]
+           )
+       }
 }
 
 // MARK: - Notification Names
@@ -426,4 +492,6 @@ extension Notification.Name {
     static let infiniteLifeActivated = Notification.Name("infiniteLifeActivated")
     static let timeBonusAdded = Notification.Name("timeBonusAdded")
     static let timeBonusConsumed = Notification.Name("timeBonusConsumed")
+    static let doubleRewardActivated = Notification.Name("doubleRewardActivated")
+    static let boost2xActivated = Notification.Name("boost2xActivated")
 }

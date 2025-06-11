@@ -268,9 +268,8 @@ class BonusViewController: BaseViewController {
             
         case .spin:
             HapticManager.shared.mediumTap()
-            // let bonusVC = createGameViewController(for: .stackTower)
-            // bonusVC.modalPresentationStyle = .fullScreen
-            // present(bonusVC, animated: true)
+             let bonusVC = SpinWheelViewController()
+            navigationController?.pushViewController(bonusVC, animated: true)
             
         case .challenges:
             HapticManager.shared.lightTap()

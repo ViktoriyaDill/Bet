@@ -29,11 +29,23 @@ class ColorSpinGameViewController: BaseGameViewController {
         UIColor(hex: "#6C0080"), // dark purple
         UIColor(hex: "#FF2D55"), // pink
         UIColor(hex: "#34C759"), // green
-        UIColor(hex: "#FF9500") // orange
+        UIColor(hex: "#FF9500"),// orange
+        UIColor(hex: "#9C80FF"),
+        UIColor(hex: "#FFCC00"),
+        UIColor(hex: "#6C0080"),
+        UIColor(hex: "#FF2D55"),
+        UIColor(hex: "#34C759"),
+        UIColor(hex: "#FF9500"),
+        UIColor(hex: "#9C80FF"),
+        UIColor(hex: "#FFCC00"),
+        UIColor(hex: "#6C0080"),
+        UIColor(hex: "#FF2D55"),
+        UIColor(hex: "#34C759"),
+        UIColor(hex: "#FF9500")
     ]
     
     private var targetColor: UIColor = UIColor(hex: "#9C80FF")
-    private var currentRound = 3 // Починаємо з 3 і віднімаємо
+    private var currentRound = 3
     private var totalRounds = 3
     private var finalColorIndex = 0
     private var gameScore = 0
@@ -41,9 +53,9 @@ class ColorSpinGameViewController: BaseGameViewController {
     
     // MARK: - Game States
     private enum GameState {
-        case ready      // Готовий до спіну
-        case spinning   // Колесо крутиться
-        case stopping   // Колесо зупиняється
+        case ready
+        case spinning
+        case stopping
     }
     
     // MARK: - UI Elements
@@ -212,18 +224,11 @@ class ColorSpinGameViewController: BaseGameViewController {
     
     private func stopWheelRotation() {
         wheelImageView.layer.removeAllAnimations()
-        
-        // Обчислюємо фінальний кут та індекс кольору під стрілкою
         let randomAngle = CGFloat.random(in: 0...(CGFloat.pi * 2))
-        
-        // Стрілка знаходиться зверху (0 градусів)
         let normalizedAngle = randomAngle.truncatingRemainder(dividingBy: CGFloat.pi * 2)
         let sectionAngle = (CGFloat.pi * 2) / CGFloat(gameColors.count)
-        
-        // Індекс кольору під стрілкою
         finalColorIndex = Int(normalizedAngle / sectionAngle) % gameColors.count
         
-        // Анімація плавного зупинення
         let rotation = CABasicAnimation(keyPath: "transform.rotation")
         rotation.fromValue = wheelImageView.layer.presentation()?.value(forKeyPath: "transform.rotation") ?? 0
         rotation.toValue = randomAngle
@@ -251,7 +256,6 @@ class ColorSpinGameViewController: BaseGameViewController {
             roundReward = 100
             playWinSound()
         } else {
-            // Перевіримо сусідні кольори для часткової винагороди
             if let targetIndex = gameColors.firstIndex(where: { $0.isEqual(targetColor) }) {
                 let distance = abs(finalColorIndex - targetIndex)
                 let wrapDistance = min(distance, gameColors.count - distance)
@@ -264,7 +268,6 @@ class ColorSpinGameViewController: BaseGameViewController {
         
         gameScore += roundReward
         
-        // Короткий показ результату раунду
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             self?.proceedToNextRound()
         }
@@ -274,14 +277,12 @@ class ColorSpinGameViewController: BaseGameViewController {
         currentRound -= 1
         
         if currentRound > 0 {
-            // Ще є раунди
             gameState = .ready
             generateTargetColor()
             updatePlayButton()
             wheelImageView.layer.removeAllAnimations()
             stopAllSounds()
         } else {
-            // Гра закінчена
             endGame()
         }
     }

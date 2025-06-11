@@ -70,10 +70,6 @@ class OnboardingViewController: UIViewController {
     }
     
     private func setupViews() {
-        // Background Image
-        backgroundImageView.contentMode = .scaleAspectFill
-        backgroundImageView.clipsToBounds = true
-        
         // Character Image
         characterImageView.contentMode = .scaleAspectFit
         characterImageView.clipsToBounds = true
