@@ -1,21 +1,38 @@
 //
-//  MainMenuViewController.swift
+//  BonusViewController.swift
 //  RootBet
 //
-//  Created by Пользователь on 31.05.2025.
+//  Created by Пользователь on 10.06.2025.
 //
 
 import UIKit
 import SnapKit
 import RealmSwift
 
-class MainMenuViewController: BaseViewController {
-    
-    private var avatarImageView = UIImageView()
+
+class BonusViewController: BaseViewController {
+
      private var coinLabel = UILabel()
      private var crystalLabel = UILabel()
     
     private let userService = UserDataService.shared
+    
+    private let backButton: UIButton = {
+        let btn = UIButton()
+        btn.setImage(UIImage(named: "prevBtn"), for: .normal)
+        btn.contentVerticalAlignment = .center
+        btn.contentHorizontalAlignment = .center
+        return btn
+    }()
+    
+    private let titleLabel: UILabel = {
+        let lbl = UILabel()
+        lbl.text = "Bonus"
+        lbl.font = UIFont.sigmarOne(32)
+        lbl.textColor = .white
+        lbl.textAlignment = .center
+        return lbl
+    }()
     
     private let headerView: UIView = {
         let stack = UIView()
@@ -26,13 +43,14 @@ class MainMenuViewController: BaseViewController {
     private let menuButtonsStackView: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .vertical
-        stackView.spacing = 20
+        stackView.spacing = 12
         stackView.distribution = .fillEqually
         return stackView
     }()
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        navigationController?.isNavigationBarHidden = true
         setupUI()
         setupConstraints()
         setupActions()
@@ -51,20 +69,17 @@ class MainMenuViewController: BaseViewController {
     
     private func setupUI() {
         view.addSubview(headerView)
+        view.addSubview(titleLabel)
         view.addSubview(menuButtonsStackView)
         
         setupMenuButtons()
+        
+        backButton.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
     }
     
     private func createHeaderView() {
-        let avatarImage = UIImageView()
-        avatarImage.contentMode = .scaleAspectFill
-        avatarImage.backgroundColor = userService.avatarBackgroundColor
-        avatarImage.clipsToBounds = true
-        avatarImage.layer.borderWidth = 2
-        avatarImage.layer.borderColor = UIColor.white.cgColor
-        headerView.addSubview(avatarImage)
-        self.avatarImageView = avatarImage
+        
+        headerView.addSubview(backButton)
         
         let coinContainer = UIView()
         coinContainer.backgroundColor = UIColor(red: 0.85, green: 0.82, blue: 1.00, alpha: 1.00)
@@ -105,10 +120,10 @@ class MainMenuViewController: BaseViewController {
         
         // 1) Avatar
         
-        avatarImage.snp.makeConstraints { make in
+        backButton.snp.makeConstraints { make in
             make.leading.top.bottom.equalToSuperview()
             make.centerY.equalToSuperview()
-            make.width.equalTo(avatarImage.snp.height)
+            make.height.width.equalTo(48)
         }
 
         // 3) Crystal Container
@@ -151,7 +166,7 @@ class MainMenuViewController: BaseViewController {
     }
       
     private func setupMenuButtons() {
-        let buttonsTypes: [MenuButtonModel] = [.game, .bonus, .settings]
+        let buttonsTypes: [BonusButtonModel] = [.daily, .spin, .challenges, .achievements]
         for (index, buttonType) in buttonsTypes.enumerated() {
             let button = createMenuButton(for: buttonType)
             button.tag = index
@@ -160,19 +175,20 @@ class MainMenuViewController: BaseViewController {
     }
 
     
-    private func createMenuButton(for buttonType: MenuButtonModel) -> UIView {
+    private func createMenuButton(for buttonType: BonusButtonModel) -> UIView {
         let view = UIView()
         
         let title = UILabel()
         title.text = buttonType.rawValue
-        title.font = UIFont.sigmarOne(32)
+        title.font = UIFont.sigmarOne(16)
+        title.numberOfLines = 2
         title.textColor = .white
         title.textAlignment = .left
         view.addSubview(title)
         title.snp.makeConstraints { make in
             make.centerY.equalToSuperview()
             make.leading.equalToSuperview().inset(40)
-            make.height.equalToSuperview().multipliedBy(0.32)
+            make.height.equalTo(38)
         }
         
         let imageView = UIImageView()
@@ -180,8 +196,7 @@ class MainMenuViewController: BaseViewController {
         view.addSubview(imageView)
         imageView.snp.makeConstraints { make in
             make.trailing.centerY.equalToSuperview()
-            make.width.equalToSuperview().multipliedBy(0.35)
-            make.height.equalToSuperview()
+            make.height.width.equalTo(100)
         }
         
         view.backgroundColor = UIColor(red: 0.31, green: 0.29, blue: 0.55, alpha: 1.00)
@@ -194,30 +209,32 @@ class MainMenuViewController: BaseViewController {
     }
     
     private func setupConstraints() {
+        
         headerView.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
             make.centerX.equalToSuperview()
             make.leading.trailing.equalToSuperview().inset(16)
-            make.height.equalTo(64)
+            make.height.equalTo(48)
+        }
+        
+        titleLabel.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.top.equalTo(headerView.snp.bottom).offset(30)
         }
         
         menuButtonsStackView.snp.makeConstraints { make in
-            make.centerY.equalToSuperview()
-            make.leading.trailing.equalToSuperview().inset(40)
-            make.height.equalTo(320)
+            make.top.equalTo(titleLabel.snp.bottom).offset(30)
+            make.leading.trailing.equalToSuperview().inset(20)
+            make.height.equalToSuperview().multipliedBy(0.6)
         }
 
     }
     
+    @objc private func backButtonTapped() {
+        navigationController?.popViewController(animated: true)
+    }
+    
     private func loadHeaderData() {
-           // 1) Avatar
-           let avatarName = userService.avatarImageName
-           if let image = UIImage(named: avatarName) {
-               avatarImageView.image = image
-           } else {
-               avatarImageView.image = UIImage(named: "photoUser")
-           }
-
            // 2) Coins
            let coinsCount = userService.coins
            coinLabel.text = "\(coinsCount)"
@@ -240,24 +257,27 @@ class MainMenuViewController: BaseViewController {
         guard let container = sender.view else { return }
         let index = container.tag
         
-        guard index >= 0, index < MenuButtonModel.allCases.count else { return }
-        let model = MenuButtonModel.allCases[index]
+        guard index >= 0, index < BonusButtonModel.allCases.count else { return }
+        let model = BonusButtonModel.allCases[index]
         
         switch model {
-        case .game:
+        case .daily:
             HapticManager.shared.mediumTap()
-            let detailVC = GameDetailViewController(startIndex: index)
+            let detailVC = DailyBonusViewController()
             navigationController?.pushViewController(detailVC, animated: true)
             
-        case .bonus:
+        case .spin:
             HapticManager.shared.mediumTap()
-            let bonusVC = BonusViewController()
-            navigationController?.pushViewController(bonusVC, animated: true)
+            // let bonusVC = createGameViewController(for: .stackTower)
+            // bonusVC.modalPresentationStyle = .fullScreen
+            // present(bonusVC, animated: true)
             
-        case .settings:
+        case .challenges:
             HapticManager.shared.lightTap()
             let settingsVC = SettingsViewController()
             navigationController?.pushViewController(settingsVC, animated: false)
+        case .achievements:
+            HapticManager.shared.lightTap()
         }
     }
 
@@ -288,17 +308,5 @@ class MainMenuViewController: BaseViewController {
                textColor = UIColor(red: 0.15, green: 0.03, blue: 0.43, alpha: 1.00)
            }
        }
-    
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        
-        avatarImageView.layer.cornerRadius = avatarImageView.bounds.width / 2
-    }
-    
-    override func updateAvatarDisplay() {
-            DispatchQueue.main.async { [self] in
-                self.avatarImageView.image = UIImage(named: userService.avatarImageName) ?? UIImage(named: "photoUser")
-                self.avatarImageView.backgroundColor = userService.avatarBackgroundColor
-            }
-        }
-    }
+
+}

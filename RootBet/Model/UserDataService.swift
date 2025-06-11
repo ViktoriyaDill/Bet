@@ -120,6 +120,13 @@ final class UserDataService {
                 try realm.write {
                     settings.coins = newValue
                 }
+                
+                // Notify observers about coins update
+                NotificationCenter.default.post(
+                    name: .coinsUpdated,
+                    object: nil,
+                    userInfo: ["newAmount": newValue]
+                )
             } catch {
                 print("Error updating coins: \(error)")
             }
@@ -137,6 +144,13 @@ final class UserDataService {
                 try realm.write {
                     settings.crystals = newValue
                 }
+                
+                // Notify observers about crystals update
+                NotificationCenter.default.post(
+                    name: .crystalsUpdated,
+                    object: nil,
+                    userInfo: ["newAmount": newValue]
+                )
             } catch {
                 print("Error updating crystals: \(error)")
             }
@@ -250,4 +264,166 @@ final class UserDataService {
         }
         return false
     }
+    
+    // MARK: - Daily Bonus Features
+    
+    // Infinite Life Management
+    var hasInfiniteLife: Bool {
+        guard let endTime = UserDefaults.standard.object(forKey: "InfiniteLifeEndTime") as? Date else {
+            return false
+        }
+        return Date() < endTime
+    }
+    
+    var infiniteLifeTimeRemaining: TimeInterval {
+        guard let endTime = UserDefaults.standard.object(forKey: "InfiniteLifeEndTime") as? Date else {
+            return 0
+        }
+        return max(0, endTime.timeIntervalSince(Date()))
+    }
+    
+    func activateInfiniteLife(minutes: Int) {
+        let endTime = Date().addingTimeInterval(TimeInterval(minutes * 60))
+        UserDefaults.standard.set(endTime, forKey: "InfiniteLifeEndTime")
+        
+        // Notify games about infinite life activation
+        NotificationCenter.default.post(
+            name: .infiniteLifeActivated,
+            object: nil,
+            userInfo: ["minutes": minutes, "endTime": endTime]
+        )
+        
+        print("🔥 Infinite Life activated for \(minutes) minutes")
+    }
+    
+    // Time Bonus Management
+    var timeBonusMinutes: Int {
+        return UserDefaults.standard.integer(forKey: "TimeBonusMinutes")
+    }
+    
+    func addTimeBonus(minutes: Int) {
+        let currentBonus = timeBonusMinutes
+        let newTotal = currentBonus + minutes
+        UserDefaults.standard.set(newTotal, forKey: "TimeBonusMinutes")
+        
+        // Notify games about time bonus
+        NotificationCenter.default.post(
+            name: .timeBonusAdded,
+            object: nil,
+            userInfo: [
+                "addedMinutes": minutes,
+                "totalMinutes": newTotal
+            ]
+        )
+        
+        print("⏰ Time bonus added: +\(minutes) minutes (Total: \(newTotal))")
+    }
+    
+    func consumeTimeBonus(minutes: Int) -> Bool {
+        let currentBonus = timeBonusMinutes
+        if currentBonus >= minutes {
+            let remaining = currentBonus - minutes
+            UserDefaults.standard.set(remaining, forKey: "TimeBonusMinutes")
+            
+            // Notify about time bonus consumption
+            NotificationCenter.default.post(
+                name: .timeBonusConsumed,
+                object: nil,
+                userInfo: [
+                    "consumedMinutes": minutes,
+                    "remainingMinutes": remaining
+                ]
+            )
+            
+            print("⏰ Time bonus consumed: -\(minutes) minutes (Remaining: \(remaining))")
+            return true
+        }
+        return false
+    }
+    
+    // MARK: - Daily Bonus Statistics
+    
+    var totalDailyBonusesClaimed: Int {
+        get {
+            return UserDefaults.standard.integer(forKey: "TotalDailyBonusesClaimed")
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "TotalDailyBonusesClaimed")
+        }
+    }
+    
+    var longestDailyStreak: Int {
+        get {
+            return UserDefaults.standard.integer(forKey: "LongestDailyStreak")
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "LongestDailyStreak")
+        }
+    }
+    
+    var currentDailyStreak: Int {
+        get {
+            return UserDefaults.standard.integer(forKey: "CurrentDailyStreak")
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "CurrentDailyStreak")
+            
+            // Update longest streak if needed
+            if newValue > longestDailyStreak {
+                longestDailyStreak = newValue
+            }
+        }
+    }
+    
+    func recordDailyBonusClaim() {
+        totalDailyBonusesClaimed += 1
+        
+        // Update streak
+        let currentDay = UserDefaults.standard.integer(forKey: "CurrentDailyBonusDay")
+        if currentDay == 7 {
+            // Completed full week
+            currentDailyStreak += 1
+        }
+        
+        print("📈 Daily bonus statistics updated - Total: \(totalDailyBonusesClaimed), Streak: \(currentDailyStreak)")
+    }
+    
+    // MARK: - Bonus Status Helpers
+    
+    func getInfiniteLifeStatus() -> (isActive: Bool, timeRemaining: String) {
+        if hasInfiniteLife {
+            let remaining = infiniteLifeTimeRemaining
+            let hours = Int(remaining) / 3600
+            let minutes = Int(remaining) % 3600 / 60
+            
+            let timeString = hours > 0 ? "\(hours)h \(minutes)m" : "\(minutes)m"
+            return (true, timeString)
+        }
+        return (false, "")
+    }
+    
+    func getTimeBonusStatus() -> (hasBonus: Bool, minutes: Int) {
+        let minutes = timeBonusMinutes
+        return (minutes > 0, minutes)
+    }
+    
+    // MARK: - Game Integration Helpers
+    
+    func shouldShowInfiniteLifeIndicator() -> Bool {
+        return hasInfiniteLife
+    }
+    
+    func getGameTimerBonus() -> TimeInterval {
+        // Convert time bonus minutes to seconds for game timers
+        return TimeInterval(timeBonusMinutes * 60)
+    }
+}
+
+// MARK: - Notification Names
+extension Notification.Name {
+    static let coinsUpdated = Notification.Name("coinsUpdated")
+    static let crystalsUpdated = Notification.Name("crystalsUpdated")
+    static let infiniteLifeActivated = Notification.Name("infiniteLifeActivated")
+    static let timeBonusAdded = Notification.Name("timeBonusAdded")
+    static let timeBonusConsumed = Notification.Name("timeBonusConsumed")
 }

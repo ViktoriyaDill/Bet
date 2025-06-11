@@ -36,6 +36,31 @@ enum MenuButtonModel: String, CaseIterable {
     }
 }
 
+
+enum BonusButtonModel: String, CaseIterable {
+    case daily = "Daily Bonus"
+    case spin = "SpinWheel"
+    case challenges = "Daily Challenges"
+    case achievements = "Achievements"
+    
+    var imageName: String {
+        switch self {
+        case .daily:
+            return "treasure_chest_mega_opened"
+        case .spin:
+            return "color-spin"
+        case .challenges:
+            return "color-buble"
+        case .achievements:
+            return "color-prise"
+        }
+    }
+    
+    var image: UIImage? {
+        return UIImage(named: imageName)
+    }
+}
+
 struct GameDetailModel {
     let title: String
     let description: String
