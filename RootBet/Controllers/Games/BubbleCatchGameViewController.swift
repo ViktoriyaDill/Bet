@@ -58,6 +58,9 @@ class BubbleCatchGameViewController: BaseGameViewController {
     private var activeTouchBasket1: UITouch?
     private var activeTouchBasket2: UITouch?
     
+    private var correctCatchStreak = 0
+    private var totalBubblesCaught = 0
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -69,6 +72,9 @@ class BubbleCatchGameViewController: BaseGameViewController {
         bindViewModel()
         setupAudioPlayers()
         updateUI()
+        
+        setupBonusNotifications()
+        setupAchievementTracking()
     }
     
     override func viewDidLayoutSubviews() {
@@ -456,6 +462,105 @@ class BubbleCatchGameViewController: BaseGameViewController {
     deinit {
         stopGameLoop()
         stopAllSounds()
+        
+        NotificationCenter.default.removeObserver(self)
+    }
+}
+
+// MARK: - Bonus & Achievement Methods
+extension BubbleCatchGameViewController {
+    
+    private func setupBonusNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(bonusActivated),
+            name: .infiniteLifeActivated,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(bonusActivated),
+            name: .timeBonusAdded,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(bonusActivated),
+            name: .boost2xActivated,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(bonusActivated),
+            name: .doubleRewardActivated,
+            object: nil
+        )
+    }
+
+    @objc private func bonusActivated(_ notification: Notification) {
+        HapticManager.shared.success()
+    }
+
+    private func setupAchievementTracking() {
+        AchievementsViewController.updateAchievementProgress(type: .playFirstGame, progress: 1)
+    }
+    
+    private func applyBonuses(to coins: Int) -> Int {
+        var result = coins
+        
+        if UserDataService.shared.has2xBoost {
+            result *= 2
+        }
+        
+        if UserDataService.shared.hasDoubleReward {
+            result *= 2
+        }
+        
+        return result
+    }
+
+    // MARK: - Achievement Tracking
+
+    private func trackBubbleCatch(isCorrect: Bool) {
+        if isCorrect {
+            totalBubblesCaught += 1
+            correctCatchStreak += 1
+            
+            AchievementsViewController.updateAchievementProgress(type: .catchBubbles, progress: totalBubblesCaught)
+            AchievementsViewController.updateAchievementProgress(type: .bubbleStreak, progress: correctCatchStreak)
+        } else {
+            correctCatchStreak = 0
+        }
+    }
+
+    private func trackGamePlayed() {
+        let gamesPlayed = UserDefaults.standard.integer(forKey: "BubbleCatchGamesPlayed")
+        UserDefaults.standard.set(gamesPlayed + 1, forKey: "BubbleCatchGamesPlayed")
+        
+        checkVersatilePlayer()
+    }
+
+    private func checkVersatilePlayer() {
+        let colorSpinPlayed = UserDefaults.standard.integer(forKey: "ColorSpinGamesPlayed") > 0
+        let stackTowerPlayed = UserDefaults.standard.integer(forKey: "StackTowerGamesPlayed") > 0
+        let bubbleCatchPlayed = UserDefaults.standard.integer(forKey: "BubbleCatchGamesPlayed") > 0
+        let memoryMatchPlayed = UserDefaults.standard.integer(forKey: "MemoryMatchGamesPlayed") > 0
+        
+        let gamesPlayedCount = [colorSpinPlayed, stackTowerPlayed, bubbleCatchPlayed, memoryMatchPlayed].filter { $0 }.count
+        
+        AchievementsViewController.updateAchievementProgress(type: .playAllGames, progress: gamesPlayedCount)
+    }
+
+    // MARK: - Daily Challenge Integration
+    private func updateDailyChallenges() {
+        let progress: [String: Any] = [
+            "correctStreak": correctCatchStreak,
+            "score": viewModel.currentScore,
+            "perfectGames": 0
+        ]
     }
 }
 
@@ -489,9 +594,12 @@ extension BubbleCatchGameViewController: GameViewModelDelegate {
         // Add coins based on score
         let coinsEarned = score / 10
         if coinsEarned > 0 {
-            UserDataService.shared.addCoins(coinsEarned)
+            let finalCoins = applyBonuses(to: coinsEarned)
+            UserDataService.shared.addCoins(finalCoins)
         }
         
+        trackGamePlayed()
+        updateDailyChallenges()
         updateUI()
         
         playButton.setTitle("Try Again", for: .normal)
@@ -506,6 +614,8 @@ extension BubbleCatchGameViewController: GameViewModelDelegate {
     
     func scoreDidUpdate(_ score: Int) {
         updateScore(score)
+        trackBubbleCatch(isCorrect: true)
+        updateDailyChallenges()
         playCatch()
         HapticManager.shared.lightTap()
     }
@@ -513,6 +623,10 @@ extension BubbleCatchGameViewController: GameViewModelDelegate {
     func livesDidUpdate(_ lives: Int) {
         updateLives(lives)
         if lives > 0 {
+            if UserDataService.shared.hasInfiniteLife {
+                return
+            }
+            trackBubbleCatch(isCorrect: false)
             playMiss()
             HapticManager.shared.mediumTap()
         }

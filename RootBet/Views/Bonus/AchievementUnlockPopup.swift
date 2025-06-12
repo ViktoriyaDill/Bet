@@ -21,12 +21,14 @@ class AchievementUnlockPopup: UIView {
         return view
     }()
     
-    private let containerView: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor(hex: "#4E4A8D")
+    private let containerView: UIImageView = {
+        let view = UIImageView()
+        view.image = UIImage(named: "Win")
         view.layer.cornerRadius = 20
         view.layer.borderWidth = 2
         view.layer.borderColor = UIColor.white.cgColor
+        view.contentMode = .scaleAspectFill
+        view.clipsToBounds = true
         return view
     }()
     
@@ -58,28 +60,12 @@ class AchievementUnlockPopup: UIView {
         return label
     }()
     
-    private let trophyImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.image = UIImage(named: "Win")
-        imageView.contentMode = .scaleAspectFit
-        return imageView
-    }()
-    
     private let achievementNameLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.sigmarOne(32)
         label.textColor = .white
         label.textAlignment = .center
         label.numberOfLines = 2
-        return label
-    }()
-    
-    private let achievementDescLabel: UILabel = {
-        let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 14, weight: .medium)
-        label.textColor = UIColor.white.withAlphaComponent(0.8)
-        label.textAlignment = .center
-        label.numberOfLines = 3
         return label
     }()
     
@@ -107,9 +93,7 @@ class AchievementUnlockPopup: UIView {
         containerView.addSubview(closeButton)
         containerView.addSubview(congratulationsLabel)
         containerView.addSubview(subtitleLabel)
-        containerView.addSubview(trophyImageView)
         containerView.addSubview(achievementNameLabel)
-        containerView.addSubview(achievementDescLabel)
         
         setupConstraints()
         setupActions()
@@ -141,20 +125,9 @@ class AchievementUnlockPopup: UIView {
             make.leading.trailing.equalToSuperview().inset(20)
         }
         
-        trophyImageView.snp.makeConstraints { make in
-            make.top.equalTo(subtitleLabel.snp.bottom).offset(30)
-            make.centerX.equalToSuperview()
-            make.width.height.equalTo(120)
-        }
-        
         achievementNameLabel.snp.makeConstraints { make in
-            make.top.equalTo(trophyImageView.snp.bottom).offset(20)
             make.leading.trailing.equalToSuperview().inset(20)
-        }
-        
-        achievementDescLabel.snp.makeConstraints { make in
-            make.top.equalTo(achievementNameLabel.snp.bottom).offset(12)
-            make.leading.trailing.equalToSuperview().inset(20)
+            make.center.equalToSuperview()
         }
     }
     
@@ -167,7 +140,6 @@ class AchievementUnlockPopup: UIView {
     
     private func configureAchievement() {
         achievementNameLabel.text = achievement.title.uppercased()
-        achievementDescLabel.text = achievement.description
     }
     
     private func setupParticles() {
@@ -222,9 +194,6 @@ class AchievementUnlockPopup: UIView {
         }) { _ in
             // Start particle animation
             self.startParticleAnimation()
-            
-            // Trophy bounce animation
-            self.animateTrophy()
         }
     }
     
@@ -247,20 +216,4 @@ class AchievementUnlockPopup: UIView {
         }
     }
     
-    private func animateTrophy() {
-        UIView.animate(withDuration: 0.6, delay: 0.2, usingSpringWithDamping: 0.6, initialSpringVelocity: 0, options: [.autoreverse, .repeat], animations: {
-            self.trophyImageView.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
-        }) { _ in
-            self.trophyImageView.transform = .identity
-        }
-        
-        // Add rotation animation
-        let rotateAnimation = CABasicAnimation(keyPath: "transform.rotation")
-        rotateAnimation.fromValue = -0.1
-        rotateAnimation.toValue = 0.1
-        rotateAnimation.duration = 0.5
-        rotateAnimation.autoreverses = true
-        rotateAnimation.repeatCount = 3
-        trophyImageView.layer.add(rotateAnimation, forKey: "rotation")
-    }
 }

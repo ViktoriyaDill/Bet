@@ -19,7 +19,7 @@ class BubbleCatchViewModel {
     private var timeTimer: Timer?
 
     // MARK: - Game Properties
-    private var currentScore = 0
+    var currentScore = 0
     private var livesRemaining = 3
     private var gameTime = 0
     private var gameSpeed: CGFloat = 1.0

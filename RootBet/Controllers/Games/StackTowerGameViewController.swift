@@ -72,6 +72,9 @@ class StackTowerGameViewController: BaseGameViewController {
         loadBestScore()
         resetGame()
         
+        setupBonusNotifications()
+        setupAchievementTracking()
+        
         dropTapGesture.numberOfTapsRequired = 1
         gameAreaView.isUserInteractionEnabled = true
         gameAreaView.addGestureRecognizer(dropTapGesture)
@@ -179,6 +182,11 @@ class StackTowerGameViewController: BaseGameViewController {
     }
     
     private func loseLife() {
+        if UserDataService.shared.hasInfiniteLife {
+            showBonusNotification("🔥 Life Saved!", "Infinite Life protected you!")
+            return
+        }
+        
         livesRemaining -= 1
         updateLivesDisplay()
         
@@ -207,11 +215,14 @@ class StackTowerGameViewController: BaseGameViewController {
         
         let coinReward = calculateCoinReward()
         if coinReward > 0 {
-            UserDataService.shared.addCoins(coinReward)
+            let finalCoins = applyBonuses(to: coinReward)
+            UserDataService.shared.addCoins(finalCoins)
         }
         
         updateUI()
         updateButtons()
+        trackGamePlayed()
+        updateDailyChallenges()
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
             self?.showGameResult(isNewRecord: isRecord)
@@ -392,14 +403,16 @@ class StackTowerGameViewController: BaseGameViewController {
         
         if abs(alignment) < 5.0 && abs(newWidth - blockWidth) < 5.0 {
             perfectAlignments += 1
-            gameScore += 100 + (currentLevel * 10)
+            var points = 100 + (currentLevel * 10)
+            points = applyBonuses(to: points)
+            gameScore += points
             playPerfectAlignSound()
             HapticManager.shared.success()
-            print("✨ Perfect alignment! Block keeps original size, but blockWidth updated to: \(newWidth)")
         } else {
-            gameScore += 50 + (currentLevel * 5)
+            var points = 50 + (currentLevel * 5)
+            points = applyBonuses(to: points)
+            gameScore += points
             HapticManager.shared.lightTap()
-            print("📏 Block attached with original size, but blockWidth updated to: \(newWidth)")
         }
         blockWidth = newWidth
 
@@ -418,6 +431,9 @@ class StackTowerGameViewController: BaseGameViewController {
         
         currentLevel += 1
         updateUI()
+        trackBlockPlaced()
+        trackTowerHeight()
+        updateDailyChallenges()
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
             self?.createMovingBlock()
@@ -546,6 +562,7 @@ class StackTowerGameViewController: BaseGameViewController {
     private func isNewRecord() -> Bool {
         return gameScore > UserDefaults.standard.integer(forKey: "StackTowerBestScore")
     }
+    
     private func calculateCoinReward() -> Int {
         let baseReward = stackedBlocks.count * 10
         let perfectBonus = perfectAlignments * 20
@@ -608,6 +625,112 @@ class StackTowerGameViewController: BaseGameViewController {
     deinit {
         stopAllTimers()
         stopAllSounds()
+        
+        NotificationCenter.default.removeObserver(self)
+    }
+}
+
+// MARK: - Bonus & Achievement Methods
+extension StackTowerGameViewController {
+    
+    private func setupBonusNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(bonusActivated),
+            name: .infiniteLifeActivated,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(bonusActivated),
+            name: .timeBonusAdded,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(bonusActivated),
+            name: .boost2xActivated,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(bonusActivated),
+            name: .doubleRewardActivated,
+            object: nil
+        )
+    }
+
+    @objc private func bonusActivated(_ notification: Notification) {
+        HapticManager.shared.success()
+    }
+
+    private func setupAchievementTracking() {
+        AchievementsViewController.updateAchievementProgress(type: .playFirstGame, progress: 1)
+    }
+
+    private func applyBonuses(to coins: Int) -> Int {
+        var result = coins
+        
+        if UserDataService.shared.has2xBoost {
+            result *= 2
+        }
+        
+        if UserDataService.shared.hasDoubleReward {
+            result *= 2
+        }
+        
+        return result
+    }
+
+    // MARK: - Achievement Tracking
+    
+    private func trackBlockPlaced() {
+        let totalBlocks = UserDefaults.standard.integer(forKey: "TotalBlocksPlaced")
+        UserDefaults.standard.set(totalBlocks + 1, forKey: "TotalBlocksPlaced")
+        
+        AchievementsViewController.updateAchievementProgress(type: .stackBlocks, progress: stackedBlocks.count)
+        AchievementsViewController.updateAchievementProgress(type: .placeBlocksTotal, progress: totalBlocks + 1)
+    }
+
+    private func trackTowerHeight() {
+        AchievementsViewController.updateAchievementProgress(type: .buildUltimateTower, progress: stackedBlocks.count)
+    }
+
+    private func trackGamePlayed() {
+        let gamesPlayed = UserDefaults.standard.integer(forKey: "StackTowerGamesPlayed")
+        UserDefaults.standard.set(gamesPlayed + 1, forKey: "StackTowerGamesPlayed")
+        
+        checkVersatilePlayer()
+    }
+
+    private func checkVersatilePlayer() {
+        let colorSpinPlayed = UserDefaults.standard.integer(forKey: "ColorSpinGamesPlayed") > 0
+        let stackTowerPlayed = UserDefaults.standard.integer(forKey: "StackTowerGamesPlayed") > 0
+        let bubbleCatchPlayed = UserDefaults.standard.integer(forKey: "BubbleCatchGamesPlayed") > 0
+        let memoryMatchPlayed = UserDefaults.standard.integer(forKey: "MemoryMatchGamesPlayed") > 0
+        
+        let gamesPlayedCount = [colorSpinPlayed, stackTowerPlayed, bubbleCatchPlayed, memoryMatchPlayed].filter { $0 }.count
+        
+        AchievementsViewController.updateAchievementProgress(type: .playAllGames, progress: gamesPlayedCount)
+    }
+
+    // MARK: - Daily Challenge Integration
+    
+    private func updateDailyChallenges() {
+        let progress: [String: Any] = [
+            "towerHeight": stackedBlocks.count,
+            "perfectBlocks": perfectAlignments,
+            "sessionPoints": gameScore
+        ]
+    }
+
+    private func showBonusNotification(_ title: String, _ message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }
 

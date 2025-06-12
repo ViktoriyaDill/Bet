@@ -88,6 +88,9 @@ class ColorSpinGameViewController: BaseGameViewController {
         bindViewModel()
         setupAudioPlayers()
         startNewGame()
+        
+        setupBonusNotifications()
+        setupAchievementTracking()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -254,6 +257,7 @@ class ColorSpinGameViewController: BaseGameViewController {
         var roundReward = 0
         if isWin {
             roundReward = 100
+            trackWin()
             playWinSound()
         } else {
             if let targetIndex = gameColors.firstIndex(where: { $0.isEqual(targetColor) }) {
@@ -289,11 +293,15 @@ class ColorSpinGameViewController: BaseGameViewController {
     
     private func endGame() {
         stopAllSounds()
+        trackGamePlayed()
+        trackHighScore()
+        updateDailyChallenges()
         
         let resultType: ResultType = (gameScore > 0) ? .win : .lost
         
         if gameScore > 0 {
-            UserDataService.shared.addCoins(gameScore)
+            let finalCoins = applyBonuses(to: gameScore)
+            UserDataService.shared.addCoins(finalCoins)
         }
         
         let winLoseVC = WinLoseViewController()
@@ -305,6 +313,14 @@ class ColorSpinGameViewController: BaseGameViewController {
         
         winLoseVC.modalPresentationStyle = .fullScreen
         present(winLoseVC, animated: true, completion: nil)
+    }
+    
+    private func trackWin() {
+        let wins = UserDefaults.standard.integer(forKey: "ColorSpinWins")
+        UserDefaults.standard.set(wins + 1, forKey: "ColorSpinWins")
+        
+        AchievementsViewController.updateAchievementProgress(type: .winColorSpinRounds, progress: wins + 1)
+        AchievementsViewController.updateAchievementProgress(type: .highScoreColorSpin, progress: gameScore)
     }
     
     // MARK: - Audio Control
@@ -340,7 +356,99 @@ class ColorSpinGameViewController: BaseGameViewController {
     }
     
     deinit {
+        NotificationCenter.default.removeObserver(self)
         stopAllSounds()
+    }
+}
+
+// MARK: - Bonus & Achievement Methods
+extension ColorSpinGameViewController {
+    
+    private func setupBonusNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(bonusActivated),
+            name: .infiniteLifeActivated,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(bonusActivated),
+            name: .timeBonusAdded,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(bonusActivated),
+            name: .boost2xActivated,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(bonusActivated),
+            name: .doubleRewardActivated,
+            object: nil
+        )
+    }
+
+    @objc private func bonusActivated(_ notification: Notification) {
+        HapticManager.shared.success()
+    }
+
+    private func setupAchievementTracking() {
+        AchievementsViewController.updateAchievementProgress(type: .playFirstGame, progress: 1)
+        AchievementsViewController.updateAchievementProgress(type: .playColorSpinRounds, progress: 1)
+    }
+    
+    private func applyBonuses(to coins: Int) -> Int {
+        var result = coins
+        
+        if UserDataService.shared.has2xBoost {
+            result *= 2
+        }
+        
+        if UserDataService.shared.hasDoubleReward {
+            result *= 2
+        }
+        
+        return result
+    }
+
+    // MARK: - Achievement Tracking
+    
+    private func trackHighScore() {
+        AchievementsViewController.updateAchievementProgress(type: .highScoreColorSpin, progress: gameScore)
+    }
+
+    private func trackGamePlayed() {
+        let gamesPlayed = UserDefaults.standard.integer(forKey: "ColorSpinGamesPlayed")
+        UserDefaults.standard.set(gamesPlayed + 1, forKey: "ColorSpinGamesPlayed")
+        
+        AchievementsViewController.updateAchievementProgress(type: .playColorSpinRounds, progress: gamesPlayed + 1)
+        checkVersatilePlayer()
+    }
+
+    private func checkVersatilePlayer() {
+        let colorSpinPlayed = UserDefaults.standard.integer(forKey: "ColorSpinGamesPlayed") > 0
+        let stackTowerPlayed = UserDefaults.standard.integer(forKey: "StackTowerGamesPlayed") > 0
+        let bubbleCatchPlayed = UserDefaults.standard.integer(forKey: "BubbleCatchGamesPlayed") > 0
+        let memoryMatchPlayed = UserDefaults.standard.integer(forKey: "MemoryMatchGamesPlayed") > 0
+        
+        let gamesPlayedCount = [colorSpinPlayed, stackTowerPlayed, bubbleCatchPlayed, memoryMatchPlayed].filter { $0 }.count
+        
+        AchievementsViewController.updateAchievementProgress(type: .playAllGames, progress: gamesPlayedCount)
+    }
+
+    // MARK: - Daily Challenge Integration
+    private func updateDailyChallenges() {
+        let progress: [String: Any] = [
+            "correctStreak": spinsCompleted,
+            "score": gameScore,
+            "bonusHits": gameScore / 100
+        ]
     }
 }
 
@@ -381,5 +489,3 @@ extension ColorSpinGameViewController: WinLoseDegateProtocol {
         }
     }
 }
-
-

@@ -213,12 +213,6 @@ class DailyChallengesViewController: BaseViewController {
     }
     
     private func setupNotifications() {
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(gameProgressUpdated),
-            name: NSNotification.Name("GameProgressUpdated"),
-            object: nil
-        )
         
         NotificationCenter.default.addObserver(
             self,
@@ -271,18 +265,6 @@ class DailyChallengesViewController: BaseViewController {
     // MARK: - Actions
     @objc private func backButtonTapped() {
         navigationController?.popViewController(animated: true)
-    }
-    
-    @objc private func profileButtonTapped() {
-        // Navigate to profile or leaderboard
-    }
-    
-    @objc private func gameProgressUpdated(_ notification: Notification) {
-        guard let gameType = notification.userInfo?["gameType"] as? String,
-              let progress = notification.userInfo?["progress"] as? [String: Any] else { return }
-        
-        DailyChallengeManager.shared.updateProgress(gameType: gameType, progress: progress)
-        checkChallengeProgress()
     }
     
     @objc private func dayChanged() {
@@ -346,12 +328,3 @@ extension DailyChallengesViewController: DailyChallengeViewDelegate {
     }
 }
 
-extension DailyChallengesViewController {
-    static func updateGameProgress(gameType: String, progress: [String: Any]) {
-        NotificationCenter.default.post(
-            name: NSNotification.Name("GameProgressUpdated"),
-            object: nil,
-            userInfo: ["gameType": gameType, "progress": progress]
-        )
-    }
-}

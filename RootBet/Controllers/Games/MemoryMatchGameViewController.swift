@@ -26,6 +26,9 @@ class MemoryMatchGameViewController: BaseGameViewController {
     
     private var livesRemaining = 3
     private var level = 1
+    private var perfectSequenceStreak = 0
+    private var perfectRoundsStreak = 0
+    private var levelsCompletedWithoutMistakes = 0
     
     // MARK: - UI
     private let cardsCollectionView: UICollectionView = {
@@ -56,6 +59,9 @@ class MemoryMatchGameViewController: BaseGameViewController {
         setupMemoryMatchConstraints()
         bindViewModel()
         setupAudioPlayers()
+        
+        setupBonusNotifications()
+        setupAchievementTracking()
         
         timeLabel.isHidden = true
         updateUI()
@@ -169,6 +175,14 @@ class MemoryMatchGameViewController: BaseGameViewController {
     }
     
     private func loseLife() {
+        // Перевірити infinite life бонус
+        if UserDataService.shared.hasInfiniteLife {
+            showBonusNotification("🔥 Life Saved!", "Infinite Life protected you!")
+            return
+        }
+        
+        perfectSequenceStreak = 0
+        perfectRoundsStreak = 0
         livesRemaining -= 1
         updateUI()
         playWrong()
@@ -204,7 +218,13 @@ class MemoryMatchGameViewController: BaseGameViewController {
         saveBestScore(viewModel.currentScore)
         let isRecord = isNewRecord(score: viewModel.currentScore)
         let coins = viewModel.currentScore / 10
-        if coins > 0 { userService.addCoins(coins) }
+        if coins > 0 {
+            let finalCoins = applyBonuses(to: coins)
+            userService.addCoins(finalCoins)
+        }
+        
+        trackGamePlayed()
+        updateDailyChallenges()
         
         playButton.setTitle("Try Again", for: .normal)
         playButton.backgroundColor = UIColor(hex: "#A77BCA")
@@ -222,7 +242,8 @@ class MemoryMatchGameViewController: BaseGameViewController {
         cardsCollectionView.isUserInteractionEnabled = false
         hideAllCrystals()
     
-        let addScore = level * 25 + distractorPositions.count * 5
+        var addScore = level * 25 + distractorPositions.count * 5
+        addScore = applyBonuses(to: addScore)
         viewModel.addScore(addScore)
         
         playCorrect()
@@ -230,6 +251,9 @@ class MemoryMatchGameViewController: BaseGameViewController {
         
         level += 1
         updateUI()
+        
+        trackSequence()
+        updateDailyChallenges()
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { self.startRound() }
     }
@@ -241,13 +265,22 @@ class MemoryMatchGameViewController: BaseGameViewController {
         saveBestScore(viewModel.currentScore)
         let isRecord = isNewRecord(score: viewModel.currentScore)
         let coins    = viewModel.currentScore / 5
-        userService.addCoins(coins)
+        let finalCoins = applyBonuses(to: coins)
+        userService.addCoins(finalCoins)
+        
+        trackGamePlayed()
+        updateDailyChallenges()
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             self.showGameResult(score: self.viewModel.currentScore,
                                 isNewRecord: isRecord,
                                 won: true)
         }
+    }
+    
+    private func trackSequence() {
+        AchievementsViewController.updateAchievementProgress(type: .memoryLevels, progress: level)
+        AchievementsViewController.updateAchievementProgress(type: .memorySequence, progress: currentSequence.count)
     }
     
     // MARK: - Sequence generation / display
@@ -380,7 +413,10 @@ class MemoryMatchGameViewController: BaseGameViewController {
     }
     
     
-    deinit { stopAllSounds() }
+    deinit {
+        stopAllSounds()
+        NotificationCenter.default.removeObserver(self)
+    }
 }
 
 // MARK: - CollectionView
@@ -410,6 +446,90 @@ extension MemoryMatchGameViewController:
         let padding: CGFloat = 10
         let w = (cv.frame.width - padding*2) / 3
         return CGSize(width: w, height: w)
+    }
+}
+
+// MARK: - Bonus & Achievement Methods
+extension MemoryMatchGameViewController {
+    
+    private func setupBonusNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(bonusActivated),
+            name: .infiniteLifeActivated,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(bonusActivated),
+            name: .boost2xActivated,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(bonusActivated),
+            name: .doubleRewardActivated,
+            object: nil
+        )
+    }
+
+    @objc private func bonusActivated(_ notification: Notification) {
+        HapticManager.shared.success()
+    }
+
+    private func setupAchievementTracking() {
+        AchievementsViewController.updateAchievementProgress(type: .playFirstGame, progress: 1)
+    }
+    
+    private func applyBonuses(to coins: Int) -> Int {
+        var result = coins
+        
+        if UserDataService.shared.has2xBoost {
+            result *= 2
+        }
+        
+        if UserDataService.shared.hasDoubleReward {
+            result *= 2
+        }
+        
+        return result
+    }
+
+    // MARK: - Achievement Tracking
+
+    private func trackGamePlayed() {
+        let gamesPlayed = UserDefaults.standard.integer(forKey: "MemoryMatchGamesPlayed")
+        UserDefaults.standard.set(gamesPlayed + 1, forKey: "MemoryMatchGamesPlayed")
+        
+        checkVersatilePlayer()
+    }
+
+    private func checkVersatilePlayer() {
+        let colorSpinPlayed = UserDefaults.standard.integer(forKey: "ColorSpinGamesPlayed") > 0
+        let stackTowerPlayed = UserDefaults.standard.integer(forKey: "StackTowerGamesPlayed") > 0
+        let bubbleCatchPlayed = UserDefaults.standard.integer(forKey: "BubbleCatchGamesPlayed") > 0
+        let memoryMatchPlayed = UserDefaults.standard.integer(forKey: "MemoryMatchGamesPlayed") > 0
+        
+        let gamesPlayedCount = [colorSpinPlayed, stackTowerPlayed, bubbleCatchPlayed, memoryMatchPlayed].filter { $0 }.count
+        
+        AchievementsViewController.updateAchievementProgress(type: .playAllGames, progress: gamesPlayedCount)
+    }
+
+    // MARK: - Daily Challenge Integration
+    private func updateDailyChallenges() {
+        let progress: [String: Any] = [
+            "perfectStreak": perfectSequenceStreak,
+            "sequenceLength": currentSequence.count,
+            "perfectRounds": perfectRoundsStreak
+        ]
+    }
+
+    private func showBonusNotification(_ title: String, _ message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }
 
