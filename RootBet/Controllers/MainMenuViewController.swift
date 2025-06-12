@@ -12,8 +12,8 @@ import RealmSwift
 class MainMenuViewController: BaseViewController {
     
     private var avatarImageView = UIImageView()
-     private var coinLabel = UILabel()
-     private var crystalLabel = UILabel()
+    private var coinLabel = UILabel()
+    private var crystalLabel = UILabel()
     
     private let userService = UserDataService.shared
     
@@ -40,14 +40,41 @@ class MainMenuViewController: BaseViewController {
         loadHeaderData()
         applyCurrentTheme()
         
-        NotificationCenter.default.addObserver(self, selector: #selector(updateAvatarDisplay), name: .avatarDidChange, object: nil)
+        setupNotifications()
     }
-
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateCurrencyDisplay()
+    }
     
     deinit {
-        NotificationCenter.default.removeObserver(self, name: .avatarDidChange, object: nil)
+        NotificationCenter.default.removeObserver(self)
     }
 
+    // MARK: - Notifications Setup
+    private func setupNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(updateAvatarDisplay),
+            name: .avatarDidChange,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(updateCurrencyDisplay),
+            name: .coinsUpdated,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(updateCurrencyDisplay),
+            name: .crystalsUpdated,
+            object: nil
+        )
+    }
     
     private func setupUI() {
         view.addSubview(headerView)
@@ -210,30 +237,42 @@ class MainMenuViewController: BaseViewController {
     }
     
     private func loadHeaderData() {
-           // 1) Avatar
-           let avatarName = userService.avatarImageName
-           if let image = UIImage(named: avatarName) {
-               avatarImageView.image = image
-           } else {
-               avatarImageView.image = UIImage(named: "photoUser")
-           }
+        // 1) Avatar
+        let avatarName = userService.avatarImageName
+        if let image = UIImage(named: avatarName) {
+            avatarImageView.image = image
+        } else {
+            avatarImageView.image = UIImage(named: "photoUser")
+        }
 
-           // 2) Coins
-           let coinsCount = userService.coins
-           coinLabel.text = "\(coinsCount)"
-
-           // 3) Crystals
-           let crystalsCount = userService.crystals
-           crystalLabel.text = "\(crystalsCount)"
-       }
+        // 2) Валюти
+        updateCurrencyDisplay()
+    }
+    
+    // MARK: - Currency Update
+    @objc private func updateCurrencyDisplay() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            // Оновлюємо коїни
+            let coinsCount = self.userService.coins
+            self.coinLabel.text = "\(coinsCount)"
+            
+            // Оновлюємо кристали
+            let crystalsCount = self.userService.crystals
+            self.crystalLabel.text = "\(crystalsCount)"
+            
+            print("💰 Updated currency display - Coins: \(coinsCount), Crystals: \(crystalsCount)")
+        }
+    }
     
     private func setupActions() {
-          for subview in menuButtonsStackView.arrangedSubviews {
-              let tapGesture = UITapGestureRecognizer(target: self, action: #selector(menuButtonTapped(_:)))
-              subview.addGestureRecognizer(tapGesture)
-              subview.isUserInteractionEnabled = true
-          }
-      }
+        for subview in menuButtonsStackView.arrangedSubviews {
+            let tapGesture = UITapGestureRecognizer(target: self, action: #selector(menuButtonTapped(_:)))
+            subview.addGestureRecognizer(tapGesture)
+            subview.isUserInteractionEnabled = true
+        }
+    }
     
     
     @objc private func menuButtonTapped(_ sender: UITapGestureRecognizer) {
@@ -263,31 +302,31 @@ class MainMenuViewController: BaseViewController {
 
     
     override func applyThemeToElements(theme: String, effects: String) {
-           super.applyThemeToElements(theme: theme, effects: effects)
-           
-           let buttonContainers = menuButtonsStackView.arrangedSubviews
-           for container in buttonContainers {
-               themeManager.applyVisualEffects(to: container, effect: effects)
-           }
-           updateCurrencyContainersTheme(theme: theme)
-       }
+        super.applyThemeToElements(theme: theme, effects: effects)
+        
+        let buttonContainers = menuButtonsStackView.arrangedSubviews
+        for container in buttonContainers {
+            themeManager.applyVisualEffects(to: container, effect: effects)
+        }
+        updateCurrencyContainersTheme(theme: theme)
+    }
        
-       private func updateCurrencyContainersTheme(theme: String) {
-           let coinContainerColor: UIColor
-           let textColor: UIColor
-           
-           switch theme {
-           case "Light Mode":
-               coinContainerColor = UIColor(red: 0.75, green: 0.72, blue: 0.90, alpha: 1.00)
-               textColor = UIColor(red: 0.15, green: 0.03, blue: 0.43, alpha: 1.00)
-           case "Classic Mode":
-               coinContainerColor = UIColor(red: 0.40, green: 0.45, blue: 0.55, alpha: 1.00)
-               textColor = UIColor.white
-           default: // Dark Mode
-               coinContainerColor = UIColor(red: 0.85, green: 0.82, blue: 1.00, alpha: 1.00)
-               textColor = UIColor(red: 0.15, green: 0.03, blue: 0.43, alpha: 1.00)
-           }
-       }
+    private func updateCurrencyContainersTheme(theme: String) {
+        let coinContainerColor: UIColor
+        let textColor: UIColor
+        
+        switch theme {
+        case "Light Mode":
+            coinContainerColor = UIColor(red: 0.75, green: 0.72, blue: 0.90, alpha: 1.00)
+            textColor = UIColor(red: 0.15, green: 0.03, blue: 0.43, alpha: 1.00)
+        case "Classic Mode":
+            coinContainerColor = UIColor(red: 0.40, green: 0.45, blue: 0.55, alpha: 1.00)
+            textColor = UIColor.white
+        default: // Dark Mode
+            coinContainerColor = UIColor(red: 0.85, green: 0.82, blue: 1.00, alpha: 1.00)
+            textColor = UIColor(red: 0.15, green: 0.03, blue: 0.43, alpha: 1.00)
+        }
+    }
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
@@ -295,10 +334,11 @@ class MainMenuViewController: BaseViewController {
         avatarImageView.layer.cornerRadius = avatarImageView.bounds.width / 2
     }
     
-    override func updateAvatarDisplay() {
-            DispatchQueue.main.async { [self] in
-                self.avatarImageView.image = UIImage(named: userService.avatarImageName) ?? UIImage(named: "photoUser")
-                self.avatarImageView.backgroundColor = userService.avatarBackgroundColor
-            }
+    @objc override func updateAvatarDisplay() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.avatarImageView.image = UIImage(named: self.userService.avatarImageName) ?? UIImage(named: "photoUser")
+            self.avatarImageView.backgroundColor = self.userService.avatarBackgroundColor
         }
     }
+}
